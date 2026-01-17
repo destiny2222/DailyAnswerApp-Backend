@@ -31,4 +31,5 @@ class RegisterController extends Controller
 
         return response()->json(['success'=> true],200);
     }
+    
 }

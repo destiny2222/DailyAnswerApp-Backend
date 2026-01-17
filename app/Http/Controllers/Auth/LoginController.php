@@ -19,9 +19,9 @@ class LoginController extends Controller
             return response()->json(['errors' => $validated->errors()], 422);
         }
 
-        // Authentication logic would go here
+        // Authentication logic
         if(Auth::attempt(['email' => $request->email, 'password' => $request->password])){
-            $token = Auth::user()->createToken('authToken')->accessToken;
+            $token = Auth::user()->createToken('authToken')->plainTextToken;
             return response()->json([
                 'success'=> true, 
                 'token' => $token
