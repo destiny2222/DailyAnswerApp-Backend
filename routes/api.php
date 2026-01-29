@@ -1,17 +1,65 @@
 <?php
 
+use App\Http\Controllers\Api\DevotionalController;
+use App\Http\Controllers\Api\MemoryVerseController;
+use App\Http\Controllers\Api\NoteController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-
-
-
 Route::post('v1/login', [LoginController::class, 'login']);
 Route::post('v1/register', [RegisterController::class, 'register']);
+Route::post('v1/send-reset-otp', [ResetPasswordController::class, 'sendResetOtp']);
+Route::post('v1/reset-password', [ResetPasswordController::class, 'reset']);
 
+// memory verses routes
+Route::get('v1/memories', [MemoryVerseController::class, 'list']);
+Route::get('v1/memories/{id}/details', [MemoryVerseController::class, 'details']);
+// social auth routes
+Route::post('/auth/google', [SocialAuthController::class, 'googleAuth']);
+Route::post('/auth/google/callback', [SocialAuthController::class, 'googleCallback']);
+
+// devotional routes
+Route::get('v1/devotionals', [DevotionalController::class, 'index']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('v1/devotional/{id}/details', [DevotionalController::class, 'getDetails']);
+    // Payment routes
+    Route::get('v1/payment/plans', [PaymentController::class, 'getSubscriptionPlans']);
+    Route::get('v1/payment/recurring-support-plans', [PaymentController::class, 'getRecurringSupportPlans']);
+    Route::post('v1/payment/create-subscription', [PaymentController::class, 'createSubscription']);
+    Route::post('v1/payment/confirm', [PaymentController::class, 'confirmPayment']);
+    Route::get('v1/payment/status', [PaymentController::class, 'checkPaymentStatus']);
+    Route::post('v1/payment/confirm-recurring-support', [PaymentController::class, 'confirmRecurringSupport']);
+    // New support routes
+    Route::post('v1/payment/create-support', [PaymentController::class, 'createSupport']);
+    Route::post('v1/payment/cancel-recurring-support', [PaymentController::class, 'cancelRecurringSupport']);
+    // profile routes
+    Route::get('v1/profile', [ProfileController::class, 'profile'])->middleware('auth:sanctum');
+    // note routes
+    Route::get('v1/notes', [NoteController::class, 'index']);
+    Route::get('v1/notes/{id}/show', [NoteController::class, 'show']);
+    Route::put('v1/notes/{id}/update', [NoteController::class, 'update']);
+    Route::post('v1/notes/store', [NoteController::class, 'store']);
+    Route::delete('v1/notes/{id}/delete', [NoteController::class, 'destroy']);
+    // prayer routes
+    Route::get('v1/prayers', [App\Http\Controllers\Api\PrayerController::class, 'index']);
+    Route::post('v1/prayers/store', [App\Http\Controllers\Api\PrayerController::class, 'store']);
+    Route::put('v1/prayers/{prayerNote}/update', [App\Http\Controllers\Api\PrayerController::class, 'update']);
+    Route::get('v1/prayers/{prayerNote}/show', [App\Http\Controllers\Api\PrayerController::class, 'show']);
+    Route::delete('v1/prayers/{prayerNote}/delete', [App\Http\Controllers\Api\PrayerController::class, 'delete']);
+    // profile update routes
+    Route::put('v1/profile/update', [ProfileController::class, 'updateProfile']);
+    Route::post('v1/profile/change-image', [ProfileController::class, 'changeProfileImage']);
+    Route::post('v1/profile/change-password', [ProfileController::class, 'changePassword']);
+});
 
 Route::get('/user', function (Request $request) {
+
     return $request->user();
 })->middleware('auth:sanctum');

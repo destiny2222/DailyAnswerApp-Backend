@@ -66,7 +66,7 @@
 						<h3 class="mb-0">Sign In</h3>
 						<p class="mb-0">Log in to continue your journey!</p>
 					</div>
-					<form action="{{ route('admin.login') }}" method="POST">
+					<form action="{{ route('admin.post-login') }}" method="POST">
 						@csrf
 						<div class="mb-3">
 							<label class="form-label">Email or Phone</label>

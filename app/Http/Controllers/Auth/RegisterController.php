@@ -10,15 +10,16 @@ use Illuminate\Support\Facades\Validator;
 
 class RegisterController extends Controller
 {
-    public function register(Request $request){
+    public function register(Request $request)
+    {
         $validated = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'username' => 'required|string|max:255|unique:users',
+            'username' => 'nullable|string|max:255',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        if($validated->fails()){
+        if ($validated->fails()) {
             return response()->json(['errors' => $validated->errors()], 422);
         }
 
@@ -29,7 +30,6 @@ class RegisterController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        return response()->json(['success'=> true],200);
+        return response()->json(['success' => true], 200);
     }
-    
 }

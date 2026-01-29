@@ -1,101 +1,78 @@
 @extends('layouts.master-2')
 @section('content')
-
-    <div class="container-xxl flex-grow-1 container-p-y">
-        <!-- Grid Card -->
-        <div class="row py-4">
-            <div class="col-xl">
-                <h6 class="pb-1 mb-4 text-muted">Users Table</h6>
-            </div>
-            <div class="col-xl text-end">
-                <a href="{{ route('admin.register.form') }}" class="btn btn-primary">
-                    <span class="tf-icons bx bx-add-to-queue"></span>&nbsp; Add New User
-                </a>
-            </div>
+    <div class="card w-100 position-relative overflow-hidden">
+        <div class="px-4 py-3 border-bottom">
+            <h4 class="card-title mb-0">User Table</h4>
         </div>
-
-
-        <div class="row">
-            <!-- Striped Rows -->
-            <div class="card">
-                <h5 class="card-header">Users</h5>
-                <div class="table-responsive text-nowrap">
-                    <table class="table ">
-                        <thead>
-                            <tr>
-                                <th>Id</th>
-                                <th>Image</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Phone Number</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="table-border-bottom-0">
-                            @if (count($users) != 0)
+        <div class="card-body p-4">
+            <div class="table-responsive mb-4 border rounded-1">
+                <table class="table text-nowrap mb-0 align-middle">
+                    <thead class="text-dark fs-4">
+                        <tr>
+                            <th>
+                                <h6 class="fs-4 fw-semibold mb-0">Name</h6>
+                            </th>
+                            <th>
+                                <h6 class="fs-4 fw-semibold mb-0">Email Address</h6>
+                            </th>
+                            <th>
+                                <h6 class="fs-4 fw-semibold mb-0">Subscription Plan</h6>
+                            </th>
+                            <th>
+                                <h6 class="fs-4 fw-semibold mb-0">Payment Expires</h6>
+                            </th>
+                            <th>
+                                <h6 class="fs-4 fw-semibold mb-0">Action</h6>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (count($users) != 0)
                             @forelse ($users as $usering)
-                            <tr>
-                                <td>{{ $loop->index + 1 }}</td>
-                                <td>
-                                    <ul class="list-unstyled users-list m-0 avatar-group d-flex align-items-center">
-                                        <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="" data-bs-original-title="{{ $usering->name }}">
-                                            <img src="{{ asset('profile/'.$usering->profile_picture) }}" alt="Avatar" class="rounded-circle">
-                                        </li>
-                                    </ul>
-                                </td>
-                                <td>
-                                    {{ $usering->name  }}
-                                </td>
-                                <td>
-                                    {{ $usering->email  }}
-                                </td>
-                                <td>
-                                    {{ $usering->phone ?? 'N/A' }}
-                                </td>
-                                <td>
-                                    <div class="d-flex gap-3">
-                                        <a class="btn btn-primary btn-sm" href="{{ route('admin.customer.edit',$usering->id) }}">
-                                            <i class="bx bx-edit-alt "></i>
-                                            Edit
-                                        </a>
-                                        <a href="{{ route('admin.customer-delete', $usering->id) }}" class="btn btn-danger btn-sm" 
-                                            onclick="event.preventDefault(); document.getElementById('delete-form-{{ $usering->id }}').submit(); return confirm('Are you sure?');">
-                                            <i class="bx bxs-trash me-1"></i>
-                                            Delete
-                                        </a>
-                                        <form action="{{ route('admin.customer-delete', $usering->id) }}" method="POST" id="delete-form-{{ $usering->id }}">
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ asset('profile/'.$usering->profile_photo_url) }}" class="rounded-circle"
+                                                width="40" height="40">
+                                            <div class="ms-3">
+                                                <h6 class="fs-4 fw-semibold mb-0">{{ $usering->name }}</h6>
+                                                <span class="fw-normal">{{ $usering->username }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <p class="mb-0 fw-normal">{{ $usering->email }}</p>
+                                    </td>
+                                    <td>
+                                        @if ($usering->has_paid)
+                                            <span class="badge bg-primary">Paid</span>
+                                        @else
+                                            <span class="badge bg-danger">Unpaid</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $usering->payment_expires_at ? $usering->payment_expires_at->format('M d, Y') : 'N/A' }}</td>
+                                    <td>
+                                        <a href="{{ route('admin.customer.edit', $usering->id) }}" class="btn btn-sm btn-primary">Edit</a>
+                                        <form action="{{ route('admin.customer.delete', $usering->id) }}" method="POST" style="display: inline-block;">
                                             @csrf
                                             @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this user?')">Delete</button>
                                         </form>
-                                    </div>
-                                </td>
-                            </tr>
+                                    </td>
+                                </tr>
                             @empty
-    
+                                <tr>
+                                    <td colspan="6" class="text-center">
+                                        No users found.
+                                    </td>
+                                </tr>
                             @endforelse
-    
-                            @endif
-    
-                        </tbody>
-    
-                    </table>
-                </div>
-            </div>
-            <!--/ Striped Rows -->
-        </div>
-    
-        <div class="row pt-5" aria-label="Page navigation">
-            <div class="pagination justify-content-end">
-                 {!! $users->withQueryString()->links('pagination::bootstrap-5') !!}
+                        @endif
+                    </tbody>
+                </table>
             </div>
         </div>
-
-
-
     </div>
-
-    
-
 @endsection
 <script>
     ClassicEditor

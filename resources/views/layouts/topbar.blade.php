@@ -12,9 +12,9 @@
             </ul>
 
             <div class="d-block d-lg-none py-4">
-                <a href="index.html" class="text-nowrap logo-img">
-                    <img src="/assets/images/logos/dark-logo.svg" class="dark-logo" alt="Logo-Dark">
-                    <img src="/assets/images/logos/light-logo.svg" class="light-logo" alt="Logo-light">
+                <a href="{{ route('admin.home') }}" class="text-nowrap logo-img">
+                    <img src="/icon.png" class="dark-logo " style="width: 20%" alt="Logo-Dark">
+                    <img src="/icon.png" class="light-logo " style="width: 20%" alt="Logo-light">
                 </a>
             </div>
             <a class="navbar-toggler nav-icon-hover-bg rounded-circle p-0 mx-0 border-0" href="javascript:void(0)"
@@ -45,8 +45,8 @@
                         <!-- ------------------------------- -->
                         <!-- start profile Dropdown -->
                         <!-- ------------------------------- -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link pe-0" href="javascript:void(0)" id="drop1" aria-expanded="false">
+                        <li class="nav-item ">
+                            <a class="nav-link pe-0" href="javascript:void(0)"  aria-expanded="false">
                                 <div class="d-flex align-items-center">
                                     <div class="user-profile-img">
                                         <img src="/assets/images/profile/user-1.jpg" class="rounded-circle"

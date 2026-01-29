@@ -14,10 +14,20 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name');
-            $table->string('username')->unique();
+            $table->string('username')->nullable()->unique();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->boolean('has_paid')->default(false);
+            $table->string('payment_status')->nullable();
+            $table->timestamp('payment_date')->nullable();
+            $table->timestamp('payment_expires_at')->nullable();
+            $table->string('stripe_customer_id')->nullable();
+            $table->string('profile_photo_url')->default('avatar.jpg');
+            $table->string('stripe_subscription_id')->nullable();
+            $table->string('subscription_plan')->nullable();
+            $table->string('google_id')->nullable()->unique();
+            $table->string('provider')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
