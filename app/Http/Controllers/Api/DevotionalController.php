@@ -13,7 +13,10 @@ class DevotionalController extends Controller
     public function index()
     {
         try {
+            $today = now()->toDateString();
+
             $devotionals = Devotional::where('status', 'published')
+                ->whereDate('date', '<=', $today)
                 ->orderBy('date', 'desc')
                 ->paginate(10);
 
@@ -22,9 +25,36 @@ class DevotionalController extends Controller
                 'data' => DevotionResource::collection($devotionals),
             ]);
         } catch (\Exception $e) {
-            Log::error('Error fetching devotionals: '.$e->getMessage());
+            Log::error('Error fetching today\'s devotional: '.$e->getMessage());
 
-            return response()->json(['error' => 'An error occurred while fetching devotionals.'], 500);
+            return response()->json(['error' => 'An error occurred.'], 500);
+        }
+    }
+
+    public function today()
+    {
+        try {
+            $today = now()->toDateString();
+
+            $devotional = Devotional::where('status', 'published')
+                ->whereDate('date', $today)
+                ->first();
+
+            if (! $devotional) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No devotional available for today.',
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => new DevotionResource($devotional),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching today\'s devotional: '.$e->getMessage());
+
+            return response()->json(['error' => 'An error occurred.'], 500);
         }
     }
 

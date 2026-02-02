@@ -26,6 +26,7 @@ Route::post('/auth/google/callback', [SocialAuthController::class, 'googleCallba
 
 // devotional routes
 Route::get('v1/devotionals', [DevotionalController::class, 'index']);
+Route::get('v1/devotionals/today', [DevotionalController::class, 'today']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('v1/devotional/{id}/details', [DevotionalController::class, 'getDetails']);

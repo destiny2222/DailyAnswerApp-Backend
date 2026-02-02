@@ -48,6 +48,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('', [DevotionalController::class, 'index'])->name('devotionals.index');
             Route::get('/create', [DevotionalController::class, 'create'])->name('devotionals.create');
             Route::post('/store', [DevotionalController::class, 'store'])->name('devotionals.store');
+            //
+            Route::get('/bulk-create', [DevotionalController::class, 'showBulkCreate'])->name('devotionals.bulk-create');
+            Route::post('/bulk-store', [DevotionalController::class, 'bulkStore'])->name('devotionals.bulk-store');
+            Route::post('/docx-upload', [DevotionalController::class, 'docxUpload'])->name('devotionals.docx-upload');
             Route::get('/{devotional}', [DevotionalController::class, 'show'])->name('devotionals.show');
             Route::get('/{devotional}/edit', [DevotionalController::class, 'edit'])->name('devotionals.edit');
             Route::put('/{devotional}/update', [DevotionalController::class, 'update'])->name('devotionals.update');

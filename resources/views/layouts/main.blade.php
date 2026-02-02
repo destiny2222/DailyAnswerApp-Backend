@@ -20,7 +20,7 @@
                 <div class="logo-icon">
                     <img src="{{ asset('icon.png') }}" class="logo-icon" alt="">
                 </div>
-                <span class="logo-text">Daily Answer Devotional</span>
+                <span class="logo-text">The Daily Answer</span>
             </a>
 
             <!-- Desktop Navigation Links -->
@@ -71,6 +71,8 @@
                 <a href="/about-us">About</a>
                 <a href="/resources">Resources</a>
                 <a href="/support">Support</a>
+                <a href="/privacy-policy">Privacy Policy</a>
+                <a href="/terms-of-service">Terms of Service</a>
             </div>
             <div class="footer-divider"></div>
             <p class="footer-copyright">© 2025 Daily Answer. All rights reserved.</p>
