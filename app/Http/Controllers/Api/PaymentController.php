@@ -67,7 +67,13 @@ class PaymentController extends Controller
 
         try {
             // Create or retrieve Stripe customer
-            if (!$user->stripe_customer_id) {
+            try {
+                if ($user->stripe_customer_id) {
+                    $customer = Customer::retrieve($user->stripe_customer_id);
+                } else {
+                    throw new \Exception('No customer id');
+                }
+            } catch (\Exception $e) {
                 $customer = Customer::create([
                     'email' => $user->email,
                     'name' => $user->name,
@@ -75,10 +81,7 @@ class PaymentController extends Controller
                         'user_id' => $user->id,
                     ],
                 ]);
-
                 $user->update(['stripe_customer_id' => $customer->id]);
-            } else {
-                $customer = Customer::retrieve($user->stripe_customer_id);
             }
 
             // Create the PaymentIntent for subscription
@@ -132,9 +135,13 @@ class PaymentController extends Controller
         try {
 
             // Create or get existing customer
-            if ($user->stripe_customer_id) {
-                $customer = $stripe->customers->retrieve($user->stripe_customer_id);
-            } else {
+            try {
+                if ($user->stripe_customer_id) {
+                    $customer = $stripe->customers->retrieve($user->stripe_customer_id);
+                } else {
+                    throw new \Exception('No customer id');
+                }
+            } catch (\Exception $e) {
                 $customer = $stripe->customers->create([
                     'email' => $user->email,
                     'name' => $user->name,
@@ -410,64 +417,77 @@ class PaymentController extends Controller
      */
 
     public function confirmRecurringSupport(Request $request)
-{
-    $request->validate([
-        'setup_intent_id' => 'required|string',
-        'price_id' => 'required|string',
-    ]);
-
-    $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
-    $user = $request->user();
-
-    try {
-        // 1. Retrieve the SetupIntent to get metadata and payment method
-        $setupIntent = $stripe->setupIntents->retrieve($request->setup_intent_id);
-
-        if ($setupIntent->status !== 'succeeded') {
-            return response()->json(['success' => false, 'message' => 'Setup intent incomplete.'], 400);
-        }
-
-        $paymentMethodId = $setupIntent->payment_method;
-        
-        // Retrieve metadata we saved during the 'createSupport' step
-        $amount = $setupIntent->metadata->amount ?? 0;
-        $interval = $setupIntent->metadata->interval ?? 'monthly';
-
-        // 2. Attach Payment Method to Customer
-        $stripe->paymentMethods->attach($paymentMethodId, [
-            'customer' => $user->stripe_customer_id,
+    {
+        $request->validate([
+            'setup_intent_id' => 'required|string',
+            'price_id' => 'required|string',
         ]);
 
-        // 3. Set as Default Payment Method
-        $stripe->customers->update($user->stripe_customer_id, [
-            'invoice_settings' => ['default_payment_method' => $paymentMethodId],
-        ]);
+        $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
+        $user = $request->user();
 
-        // 4. Create the Subscription on Stripe
-        $subscription = $stripe->subscriptions->create([
-            'customer' => $user->stripe_customer_id,
-            'items' => [['price' => $request->price_id]],
-            'default_payment_method' => $paymentMethodId,
-            'metadata' => [
+        try {
+            // 1. Retrieve the SetupIntent to get metadata and payment method
+            $setupIntent = $stripe->setupIntents->retrieve($request->setup_intent_id);
+
+            if ($setupIntent->status !== 'succeeded') {
+                return response()->json(['success' => false, 'message' => 'Setup intent incomplete.'], 400);
+            }
+
+            $paymentMethodId = $setupIntent->payment_method;
+
+            // Retrieve metadata we saved during the 'createSupport' step
+            $amount = $setupIntent->metadata->amount ?? 0;
+            $interval = $setupIntent->metadata->interval ?? 'monthly';
+
+            // 2. Attach Payment Method to Customer
+            $stripe->paymentMethods->attach($paymentMethodId, [
+                'customer' => $user->stripe_customer_id,
+            ]);
+
+            // 3. Set as Default Payment Method
+            $stripe->customers->update($user->stripe_customer_id, [
+                'invoice_settings' => ['default_payment_method' => $paymentMethodId],
+            ]);
+
+            // 4. Create the Subscription on Stripe
+            $subscription = $stripe->subscriptions->create([
+                'customer' => $user->stripe_customer_id,
+                'items' => [['price' => $request->price_id]],
+                'default_payment_method' => $paymentMethodId,
+                'metadata' => [
+                    'user_id' => $user->id,
+                    'type' => 'recurring_support',
+                    'amount' => $amount,
+                    'interval' => $interval,
+                ],
+                'expand' => ['latest_invoice.payment_intent'],
+            ]);
+
+            // 5. Create support payment record locally
+            SupportPayment::create([
                 'user_id' => $user->id,
-                'type' => 'recurring_support',
                 'amount' => $amount,
+                'type' => 'recurring',
                 'interval' => $interval,
-            ],
-            'expand' => ['latest_invoice.payment_intent'], 
-        ]);
+                'subscription_id' => $subscription->id,
+                'stripe_customer_id' => $user->stripe_customer_id,
+                'status' => 'completed',
+                'paid_at' => now(),
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Subscription started. Processing payment...',
-            'subscription_status' => $subscription->status,
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Subscription started. Processing payment...',
+                'subscription_status' => $subscription->status,
+                'subscriptionId' => $subscription->id,
+            ]);
 
-    } catch (\Exception $e) {
-        Log::error('Error confirming recurring support: ' . $e->getMessage());
-        return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        } catch (\Exception $e) {
+            Log::error('Error confirming recurring support: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
     }
-}
 
 
     public function checkPaymentStatus(Request $request)

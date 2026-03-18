@@ -23,6 +23,12 @@ class RegisterController extends Controller
             return response()->json(['errors' => $validated->errors()], 422);
         }
 
+        // account exist check
+        $user = User::where('email', $request->email)->first();
+        if ($user) {
+            return response()->json(['errors' => 'Account already exists'], 422);
+        }
+
         User::create([
             'name' => $request->name,
             'email' => $request->email,
