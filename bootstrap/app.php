@@ -14,12 +14,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(\App\Http\Middleware\SecurityMiddleware::class);
         $middleware->alias([
             'admin.logged_in' => adminLogged::class,
             'adminLogged' => AdminMiddleware::class,
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'api.encrypt' => \App\Http\Middleware\HandleApiEncryption::class,
         ]);
         $middleware->validateCsrfTokens(except: [
             // '/dashboard/payment/*',
