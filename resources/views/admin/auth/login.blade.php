@@ -40,6 +40,7 @@
 	<!-- Start - Style CSS -->
 	<link class="main-css" href="/assets/login/style.css" rel="stylesheet">
 	<!-- End - Style CSS -->
+	<x-turnstile.scripts />
 
 </head>
 <body>
@@ -82,11 +83,17 @@
 								</span>
 							</div>
 						</div>
-						<div class="d-flex gap-2 flex-wrap justify-content-between mb-4 mb-lg-5">
+						<div class="d-flex gap-2 flex-wrap justify-content-between mb-3">
 							<div class="form-check custom-checkbox mb-0">
 								<input type="checkbox" class="form-check-input" id="customCheckBox1" name="remember">
 								<label class="form-check-label" for="customCheckBox1">Remember me</label>
 							</div>
+						</div>
+						<div class="mb-3">
+							<x-turnstile />
+							@error('cf-turnstile-response')
+								<div class="text-danger small mt-1">{{ $message }}</div>
+							@enderror
 						</div>
 						<div class="text-center mb-4">
 							<button type="submit" class="btn btn-primary btn-lg w-100 mb-3">Sign In</button>

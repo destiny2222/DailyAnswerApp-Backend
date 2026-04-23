@@ -9,11 +9,15 @@ use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\OtpController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::post('v1/login', [LoginController::class, 'login']);
 Route::post('v1/register', [RegisterController::class, 'register']);
+Route::post('v1/verify-registration-otp', [OtpController::class, 'verifyRegistrationOtp']);
+Route::post('v1/verify-login-otp', [OtpController::class, 'verifyLoginOtp']);
+Route::post('v1/resend-otp', [OtpController::class, 'resendOtp']);
 Route::post('v1/send-reset-otp', [ResetPasswordController::class, 'sendResetOtp']);
 Route::post('v1/reset-password', [ResetPasswordController::class, 'reset']);
 

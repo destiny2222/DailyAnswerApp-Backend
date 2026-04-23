@@ -27,7 +27,8 @@ class AdminRequest extends FormRequest
     {
         return [
             'field'=>['required','string'],
-            'password'=>['required']
+            'password'=>['required'],
+            // 'cf-turnstile-response' => ['required'],
         ];
     }
     public function authenticate()

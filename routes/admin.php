@@ -52,6 +52,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/bulk-create', [DevotionalController::class, 'showBulkCreate'])->name('devotionals.bulk-create');
             Route::post('/bulk-store', [DevotionalController::class, 'bulkStore'])->name('devotionals.bulk-store');
             Route::post('/docx-upload', [DevotionalController::class, 'docxUpload'])->name('devotionals.docx-upload');
+            Route::delete('/bulk-delete', [DevotionalController::class, 'bulkDelete'])->name('devotionals.bulk-delete');
             Route::get('/{devotional}', [DevotionalController::class, 'show'])->name('devotionals.show');
             Route::get('/{devotional}/edit', [DevotionalController::class, 'edit'])->name('devotionals.edit');
             Route::put('/{devotional}/update', [DevotionalController::class, 'update'])->name('devotionals.update');

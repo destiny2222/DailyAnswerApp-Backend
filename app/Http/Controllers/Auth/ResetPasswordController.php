@@ -9,25 +9,29 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Validator;
 
 class ResetPasswordController extends Controller
 {
     public function sendResetOtp(Request $request)
     {
-        $validated = Validator::make($request->all(), [
+        $validator = validator($request->all(), [
             'email' => 'required|string|email',
+            'cf-turnstile-response' => ['required'],
         ]);
 
-        if ($validated->fails()) {
-            return response()->json(['errors' => $validated->errors()], 422);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
         $email = $request->input('email');
 
         $user = User::where('email', $email)->first();
+
         if (! $user) {
-            return response()->json(['errors' => ['email' => ['User not found']]], 404);
+            return response()->json([
+                'errors' => ['email' => ['User not found']],
+                'message' => 'User not found',
+            ], 404);
         }
         // Generate a 6-digit OTP
         $otp = rand(100000, 999999);
@@ -45,15 +49,15 @@ class ResetPasswordController extends Controller
 
     public function reset(Request $request)
     {
-        $validated = Validator::make($request->all(), [
+        $validator = validator($request->all(), [
             'email' => 'required|string|email',
             'otp' => 'required|string',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        if ($validated->fails()) {
+        if ($validator->fails()) {
             return response()->json([
-                'errors' => $validated->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 

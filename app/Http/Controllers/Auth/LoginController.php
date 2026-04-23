@@ -6,39 +6,28 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\PasswordResetOtpMail;
+use App\Mail\AuthOtpMail;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
 
 class LoginController extends Controller
 {
     public function login(Request $request)
     {
-        $validated = Validator::make($request->all(), [
+        $validator = validator($request->all(), [
             'email' => 'required|string|email',
             'password' => 'required|string',
+            'cf-turnstile-response' => ['required'],
         ]);
 
-        if ($validated->fails()) {
-            return response()->json(['errors' => $validated->errors()], 422);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // too much attempt check
-        $tooMuchAttempt = Cache::get('too_much_attempt_'.$request->email);
-        if ($tooMuchAttempt) {
-            return response()->json(['errors' => 'Too many attempts. Please try again later.'], 422);
-        }
-
-        // Authentication logic
-        if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
-            $token = Auth::user()->createToken('authToken')->plainTextToken;
-
-            return response()->json([
-                'success' => true,
-                'token' => $token,
-            ], 200);
-        } else {
+        // Check if user exists
+        $user = User::where('email', $request->email)->first();
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             // increment attempt count
             $attemptCount = Cache::get('attempt_count_'.$request->email, 0);
             $attemptCount++;
@@ -48,5 +37,26 @@ class LoginController extends Controller
             }
             return response()->json(['errors' => ['Invalid credentials']], 401);
         }
+
+        // too much attempt check
+        $tooMuchAttempt = Cache::get('too_much_attempt_'.$request->email);
+        if ($tooMuchAttempt) {
+            return response()->json(['errors' => 'Too many attempts. Please try again later.'], 422);
+        }
+
+        // Generate Login OTP
+        $otp = rand(100000, 999999);
+        $cacheKey = 'login_otp_'.strtolower($request->email);
+        Cache::put($cacheKey, $otp, now()->addMinutes(10));
+
+        // Send OTP
+        Mail::to($request->email)->send(new AuthOtpMail($otp, 'Use the code below to complete your login.'));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Credentials verified. Please enter the OTP sent to your email.',
+            'otp_required' => true,
+            'email' => $request->email
+        ], 200);
     }
 }

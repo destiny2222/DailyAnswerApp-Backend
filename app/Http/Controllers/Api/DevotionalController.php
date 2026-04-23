@@ -10,20 +10,18 @@ use Illuminate\Support\Facades\Log;
 
 class DevotionalController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
             $today = now()->toDateString();
+            $perPage = $request->get('per_page', 10);
 
             $devotionals = Devotional::where('status', 'published')
                 ->whereDate('date', '<=', $today)
                 ->orderBy('date', 'desc')
-                ->paginate(10);
+                ->paginate($perPage);
 
-            return response()->json([
-                'success' => true,
-                'data' => DevotionResource::collection($devotionals),
-            ]);
+            return DevotionResource::collection($devotionals);
         } catch (\Exception $e) {
             Log::error('Error fetching today\'s devotional: '.$e->getMessage());
 

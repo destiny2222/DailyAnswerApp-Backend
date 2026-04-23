@@ -45,7 +45,7 @@
       <!--  Header Start -->
       @include('layouts.topbar')
       <!--  Header End -->
-      @include('layouts.aside')
+      {{-- @include('layouts.aside') --}}
       <div class="body-wrapper">
         <div class="container-fluid">
           @yield('content')

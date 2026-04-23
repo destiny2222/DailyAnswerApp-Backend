@@ -73,7 +73,7 @@
                         <label for="image" class="form-label fw-semibold">Profile Image</label>
                         @if ($admin->image)
                             <div class="mb-2">
-                                <img src="{{ asset('storage/' . $admin->image) }}" 
+                                <img src="{{ asset('uploads/admins/'.$admin->image) }}" 
                                      class="rounded-circle" width="80" height="80"
                                      onerror="this.src='/assets/images/profile/user-1.jpg'">
                             </div>

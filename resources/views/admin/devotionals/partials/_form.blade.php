@@ -77,7 +77,7 @@
     <label for="image">Image</label>
     @if(isset($devotional) && $devotional->image)
         <div class="mb-2">
-            <img src="{{ asset('storage/' . $devotional->image) }}" alt="Current image" class="img-thumbnail" style="max-width: 200px;">
+            <img src="{{ asset('uploads/devotionals/'.$devotional->image) }}" alt="Current image" class="img-thumbnail" style="max-width: 200px;">
             <p class="text-muted small mt-1">Current image</p>
         </div>
     @endif
@@ -104,3 +104,35 @@
 </div>
 
 <button type="submit" class="btn btn-primary w-100">Save</button>
+
+
+@push('scripts')
+<script>
+    ClassicEditor
+        .create(document.querySelector('#content'))
+        .catch(error => {
+            console.error(error);
+        });
+</script>
+<script>
+    ClassicEditor
+        .create( document.querySelector( '#prayer_note' ) )
+        .catch( error => {
+            console.error( error );
+        } );
+</script>
+<script>
+    ClassicEditor
+        .create( document.querySelector( '#application_note' ) )
+        .catch( error => {
+            console.error( error );
+        } );
+</script>
+<script>
+    ClassicEditor
+        .create( document.querySelector( '#verses' ) )
+        .catch( error => {
+            console.error( error );
+        } );
+</script>
+@endpush

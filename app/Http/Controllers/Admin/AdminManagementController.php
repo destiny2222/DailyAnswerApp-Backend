@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Admin;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
@@ -36,7 +37,10 @@ class AdminManagementController extends BaseAdminController
 
         $imagePath = 'avatar.png';
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('admins', 'public');
+            $image = $request->file('image');
+            $filename = time() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('uploads/admins'), $filename);
+            $imagePath = $filename;
         }
 
         $admin = Admin::create([
@@ -91,7 +95,14 @@ class AdminManagementController extends BaseAdminController
         }
 
         if ($request->hasFile('image')) {
-            $updateData['image'] = $request->file('image')->store('admins', 'public');
+            // Delete old image if exists and not the default avatar
+            if ($admin->image && $admin->image !== 'avatar.png' && File::exists(public_path($admin->image))) {
+                File::delete(public_path($admin->image));
+            }
+            $image = $request->file('image');
+            $filename = time() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('uploads/admins'), $filename);
+            $updateData['image'] = $filename;
         }
 
         $admin->update($updateData);
@@ -109,6 +120,11 @@ class AdminManagementController extends BaseAdminController
             return redirect()
                 ->route('admin.admins.index')
                 ->with('error', 'You cannot delete your own account.');
+        }
+
+        // Delete image if exists and not the default avatar
+        if ($admin->image && $admin->image !== 'avatar.png' && File::exists(public_path($admin->image))) {
+            File::delete(public_path($admin->image));
         }
 
         $admin->delete();

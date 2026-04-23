@@ -7,8 +7,8 @@ use App\Http\Requests\Admin\UpdateDevotionalRequest;
 use App\Models\Devotional;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpWord\IOFactory;
 
@@ -57,7 +57,10 @@ class DevotionalController extends BaseAdminController
 
             // Handle image upload
             if ($request->hasFile('image')) {
-                $data['image'] = $request->file('image')->store('devotionals', 'public');
+                $image = $request->file('image');
+                $filename = time().'.'.$image->getClientOriginalExtension();
+                $image->move(public_path('uploads/devotionals'), $filename);
+                $data['image'] = $filename;
             }
 
             //
@@ -104,10 +107,13 @@ class DevotionalController extends BaseAdminController
         // Handle image upload
         if ($request->hasFile('image')) {
             // Delete old image if exists
-            if ($devotional->image && Storage::disk('public')->exists($devotional->image)) {
-                Storage::disk('public')->delete($devotional->image);
+            if ($devotional->image && File::exists(public_path($devotional->image))) {
+                File::delete(public_path($devotional->image));
             }
-            $data['image'] = $request->file('image')->store('devotionals', 'public');
+            $image = $request->file('image');
+            $filename = time().'.'.$image->getClientOriginalExtension();
+            $image->move(public_path('uploads/devotionals'), $filename);
+            $data['image'] = $filename;
         }
 
         $devotional->update($data);
@@ -169,8 +175,8 @@ class DevotionalController extends BaseAdminController
     public function destroy(Devotional $devotional)
     {
         // Delete image if exists
-        if ($devotional->image && Storage::disk('public')->exists($devotional->image)) {
-            Storage::disk('public')->delete($devotional->image);
+        if ($devotional->image && File::exists(public_path($devotional->image))) {
+            File::delete(public_path($devotional->image));
         }
 
         $devotional->delete();
@@ -231,7 +237,10 @@ class DevotionalController extends BaseAdminController
                 // Store image if present
                 $imagePath = null;
                 if (isset($devotionalData['image']) && $devotionalData['image'] instanceof \Illuminate\Http\UploadedFile && $devotionalData['image']->isValid()) {
-                    $imagePath = $devotionalData['image']->store('devotionals', 'public');
+                    $image = $devotionalData['image'];
+                    $filename = time().'_'.uniqid().'.'.$image->getClientOriginalExtension();
+                    $image->move(public_path('uploads/devotionals'), $filename);
+                    $imagePath = $filename;
                 }
 
                 Devotional::create([
@@ -277,13 +286,8 @@ class DevotionalController extends BaseAdminController
      */
     public function docxUpload(Request $request)
     {
-        // Explicitly check for ZipArchive class
-        if (! class_exists('ZipArchive')) {
-            return redirect()->back()->with('error', 'Server configuration error: The ZipArchive class was not found. Please ensure the PHP "zip" extension is enabled in your php.ini file and that your web server (Apache) has been fully restarted.');
-        }
-
         $request->validate([
-            'docx_file' => 'required|file|mimetypes:application/vnd.openxmlformats-officedocument.wordprocessingml.document|max:5120',
+            'docx_file' => 'required|file|mimetypes:application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword|max:5120',
             'default_status' => 'nullable|in:draft,in_review,published',
         ]);
 
@@ -311,12 +315,20 @@ class DevotionalController extends BaseAdminController
 
             // Load the Word file with the appropriate reader based on extension
             if ($extension === 'doc') {
-                // The .doc format (Word 97-2003) has limited support
-                // Recommend converting to .docx for better compatibility
-                return redirect()
-                    ->back()
-                    ->with('error', 'The old .doc format (Word 97-2003) has limited support and may not parse correctly. Please save your document as .docx (Word 2007 or later) and try again. In Microsoft Word: File → Save As → Save as type → Word Document (.docx)');
+                // Use MsDoc reader for .doc files
+                try {
+                    $phpWord = IOFactory::load($filePath, 'MsDoc');
+                } catch (\Exception $e) {
+                    return redirect()
+                        ->back()
+                        ->with('error', 'The old .doc format (Word 97-2003) could not be parsed. Please save your document as .docx (Word 2007 or later) and try again.');
+                }
             } elseif ($extension === 'docx') {
+                // Explicitly check for ZipArchive class for .docx
+                if (! class_exists('ZipArchive')) {
+                    return redirect()->back()->with('error', 'Server configuration error: The ZipArchive class was not found. Please ensure the PHP "zip" extension is enabled.');
+                }
+
                 // Verify ZIP structure for .docx files
                 $zip = new \ZipArchive;
                 if ($zip->open($filePath) !== true) {
@@ -331,25 +343,40 @@ class DevotionalController extends BaseAdminController
             } else {
                 return redirect()
                     ->back()
-                    ->with('error', 'Unsupported file format. Please upload a .docx file.');
+                    ->with('error', 'Unsupported file format. Please upload a .docx or .doc file.');
             }
 
             $text = '';
 
             // Extract text from all sections
-            foreach ($phpWord->getSections() as $section) {
-                foreach ($section->getElements() as $element) {
-                    $text .= $this->extractTextFromElement($element);
+            $sections = $phpWord->getSections();
+            if (count($sections) > 0) {
+                foreach ($sections as $section) {
+                    foreach ($section->getElements() as $element) {
+                        $text .= $this->extractTextFromElement($element);
+                    }
                 }
             }
+
+            // Fallback for .docx: If no text was extracted via PHPWord, try raw ZIP extraction
+            if (empty(trim($text)) && $extension === 'docx') {
+                Log::info('PHPWord extracted no text, attempting raw ZIP extraction for DOCX.');
+                $text = $this->extractRawTextFromDocx($filePath);
+            }
+
+            // Normalize text: fix non-breaking spaces and redundant horizontal spaces
+            $text = str_replace(["\xc2\xa0", "\xa0"], ' ', $text);
+            $text = preg_replace('/[ \t]+/', ' ', $text);
 
             // Parse the text into devotionals
             $devotionals = $this->parseDevotionalText($text, $defaultStatus);
 
             if (empty($devotionals)) {
+                Log::warning('DOCX parsing returned no devotionals. Extracted text sample: '.substr($text, 0, 500));
+
                 return redirect()
                     ->back()
-                    ->with('error', 'No devotionals found in the uploaded file. Please check the format.');
+                    ->with('error', 'No devotionals found in the uploaded file. Please ensure your document follows the required format (Date, Subheading, Title, etc.) and uses standard line breaks.');
             }
 
             // Store devotionals in database
@@ -426,38 +453,46 @@ class DevotionalController extends BaseAdminController
         }
     }
 
-    /**
-     * Parse text content into devotional data
-     * Expected format:
-     * Line 1: Date (e.g., "Sunday, March 29th, 2026")
-     * Line 2: Reference/Verses (e.g., "Psalm in a Year. 1 Samuel 26-29")
-     * Line 3: Title (usually in caps/bold)
-     * Line 4+: Key verse text (optional)
-     * Content paragraphs
-     * Application: ...
-     * Memory Verse: ...
-     * Prayer: ...
-     * --- (separator for multiple devotionals)
-     */
     private function parseDevotionalText(string $text, string $defaultStatus): array
     {
         $devotionals = [];
 
-        // Split into lines first
-        $lines = explode("\n", $text);
+        // Split into lines first (handle different line endings)
+        $lines = preg_split('/\r\n|\r|\n/', $text);
         $allLines = array_map('trim', $lines);
 
         // Find indices where new devotionals start (lines that look like dates)
         $devotionalStarts = [];
-        $datePattern = '/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/i';
+
+        // More flexible date patterns:
+        $datePatterns = [
+            // 1. Day of week prefix: "Monday, March 29..." or "Wednes day" (lenient)
+            '/^(mon|tue|wed|thu|fri|sat|sun|monday|tuesday|wednesday|thursday|friday|saturday|sunday)[\s,.]+/i',
+            // 2. Month name first: "March 29..." or "Mar 29..."
+            '/^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|may|june|july|august|september|october|november|december)[\s,.]+\d{1,2}/i',
+            // 3. Numeric or Day first: "29 March..." or "29/03/2026"
+            '/^(\d{1,2}[\s,.]+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|\w+)\w*[\s,.]+\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i',
+            // 4. Year first: "2026-03-29"
+            '/^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/',
+        ];
 
         foreach ($allLines as $index => $line) {
-            if (preg_match($datePattern, $line) && ! empty($line)) {
-                $devotionalStarts[] = $index;
+            if (! empty($line)) {
+                // Skip common document headers
+                if (preg_match('/^(The Daily Answer|Page \d+|Edition)/i', $line)) {
+                    continue;
+                }
+
+                foreach ($datePatterns as $pattern) {
+                    if (preg_match($pattern, $line)) {
+                        $devotionalStarts[] = $index;
+                        break;
+                    }
+                }
             }
         }
 
-        // If no dates found, try splitting by --- separator or form feed
+        // If no dates found with date patterns, try splitting by --- separator or form feed
         if (empty($devotionalStarts)) {
             $rawDevotionals = preg_split('/\n---+\n|\f/', $text);
             foreach ($rawDevotionals as $raw) {
@@ -465,6 +500,11 @@ class DevotionalController extends BaseAdminController
                 if ($parsed) {
                     $devotionals[] = $parsed;
                 }
+            }
+
+            // If still no devotionals found, try harder parsing - look for title-like lines (all caps or bold markers)
+            if (empty($devotionals)) {
+                $devotionals = $this->parseDevotionalTextFallback($text, $defaultStatus);
             }
 
             return $devotionals;
@@ -509,40 +549,61 @@ class DevotionalController extends BaseAdminController
             'status' => $defaultStatus,
         ];
 
-        // Split into lines
-        $lines = explode("\n", $text);
+        // Split into lines (handle different line endings)
+        $lines = preg_split('/\r\n|\r|\n/', $text);
         $nonEmptyLines = array_filter(array_map('trim', $lines), function ($line) {
             return ! empty($line);
         });
         $nonEmptyLines = array_values($nonEmptyLines);
 
-        if (count($nonEmptyLines) < 3) {
-            return null; // Need at least date, reference, and title
+        if (count($nonEmptyLines) < 2) {
+            return null; // Need at least date and title/content
         }
 
         // Line 1: Date
         $devotional['date'] = $nonEmptyLines[0];
 
-        // Line 2: Reference/Reading plan (goes to subheading)
-        $devotional['subheading'] = $nonEmptyLines[1];
+        // Line 2 & 3: Determine which is Subheading and which is Title
+        // Heuristic: If Line 2 is all-caps and Line 3 is not, Line 2 is likely the Title.
+        // If both are present and Line 2 is mixed case or Line 3 is all-caps, follow standard format.
+        if (count($nonEmptyLines) >= 3) {
+            $line2 = $nonEmptyLines[1];
+            $line3 = $nonEmptyLines[2];
+            
+            $line2IsCaps = preg_match('/^[A-Z\s\d\W]{5,}$/', $line2) && !preg_match('/[a-z]/', $line2);
+            $line3IsCaps = preg_match('/^[A-Z\s\d\W]{5,}$/', $line3) && !preg_match('/[a-z]/', $line3);
 
-        // Line 3: Title (usually all caps or bold)
-        $devotional['title'] = $nonEmptyLines[2];
-
-        // Line 4: Key verse (the scripture text after the title)
-        $keyVerseIndex = 3;
-        if (isset($nonEmptyLines[$keyVerseIndex])) {
-            $devotional['key_verse'] = $nonEmptyLines[$keyVerseIndex];
+            if ($line2IsCaps && !$line3IsCaps) {
+                // Case: Date, Title, Content
+                $devotional['title'] = $line2;
+                $devotional['subheading'] = null;
+                $contentStartIndex = 2;
+            } else {
+                // Case: Date, Subheading, Title (or default)
+                $devotional['subheading'] = $line2;
+                $devotional['title'] = $line3;
+                $contentStartIndex = 3;
+            }
+        } else {
+            // Fallback for very short devotionals
+            $devotional['title'] = $nonEmptyLines[1] ?? 'Untitled';
+            $contentStartIndex = 2;
         }
 
-        // Process remaining content (starting from line 5)
+        // Line 4 (or next): Key verse (the scripture text after the title)
+        if (isset($nonEmptyLines[$contentStartIndex])) {
+            $devotional['key_verse'] = $nonEmptyLines[$contentStartIndex];
+            $contentStartIndex++;
+        }
+
+        // Process remaining content
         $contentLines = [];
         $applicationLines = [];
         $memoryVerseLines = [];
         $prayerLines = [];
         $currentSection = 'content';
 
-        for ($i = 4; $i < count($nonEmptyLines); $i++) {
+        for ($i = $contentStartIndex; $i < count($nonEmptyLines); $i++) {
             $line = $nonEmptyLines[$i];
 
             // Check for section markers
@@ -597,6 +658,73 @@ class DevotionalController extends BaseAdminController
     }
 
     /**
+     * Fallback parsing when no date patterns are matched
+     * Looks for titles (all caps lines) as potential separators
+     */
+    private function parseDevotionalTextFallback(string $text, string $defaultStatus): array
+    {
+        $devotionals = [];
+
+        // Try splitting by common separators first
+        $separators = ["\n---\n", "\n***\n", "\f"]; // \f is page break
+        $rawSections = [];
+
+        foreach ($separators as $sep) {
+            if (str_contains($text, $sep)) {
+                $rawSections = explode($sep, $text);
+                break;
+            }
+        }
+
+        if (empty($rawSections)) {
+            // Last resort: try to find titles (all caps lines)
+            $lines = preg_split('/\r\n|\r|\n/', $text);
+            $currentSection = [];
+
+            foreach ($lines as $line) {
+                $trimmed = trim($line);
+                if (empty($trimmed)) {
+                    continue;
+                }
+
+                // If it looks like a title (All caps, more than 5 chars, less than 100)
+                // and it's not a common label like "Application:"
+                if (preg_match('/^[A-Z\s\d\W]+$/', $trimmed) &&
+                    strlen($trimmed) > 5 &&
+                    strlen($trimmed) < 100 &&
+                    ! preg_match('/^(APPLICATION|MEMORY VERSE|PRAYER):/i', $trimmed)) {
+
+                    if (! empty($currentSection)) {
+                        $parsed = $this->parseSingleDevotional(implode("\n", $currentSection), $defaultStatus);
+                        if ($parsed) {
+                            $devotionals[] = $parsed;
+                        }
+                    }
+                    $currentSection = [$trimmed];
+                } else {
+                    $currentSection[] = $line;
+                }
+            }
+
+            if (! empty($currentSection)) {
+                $parsed = $this->parseSingleDevotional(implode("\n", $currentSection), $defaultStatus);
+                if ($parsed) {
+                    $devotionals[] = $parsed;
+                }
+            }
+        } else {
+            foreach ($rawSections as $raw) {
+                $parsed = $this->parseSingleDevotional($raw, $defaultStatus);
+                if ($parsed) {
+                    $devotionals[] = $parsed;
+                }
+            }
+        }
+
+        return $devotionals;
+    }
+
+    /**
      * Recursively extract text from PhpWord elements
      */
     private function extractTextFromElement($element): string
@@ -646,5 +774,71 @@ class DevotionalController extends BaseAdminController
         }
 
         return $text;
+    }
+
+    /**
+     * Raw extraction from DOCX ZIP structure
+     * Useful when PHPWord fails to parse the structure but the XML is present
+     */
+    private function extractRawTextFromDocx(string $filePath): string
+    {
+        $text = '';
+        $zip = new \ZipArchive;
+        if ($zip->open($filePath) === true) {
+            $xml = $zip->getFromName('word/document.xml');
+            $zip->close();
+
+            if ($xml) {
+                // Replace paragraph end tags with newlines to preserve structure
+                $xml = str_replace('</w:p>', "</w:p>\n", $xml);
+                // Strip all XML tags
+                $text = strip_tags($xml);
+                // Decode HTML entities just in case
+                $text = html_entity_decode($text);
+            }
+        }
+
+        return $text;
+    }
+
+    /**
+     * Bulk delete devotionals
+     */
+    public function bulkDelete(Request $request)
+    {
+        $ids = $request->ids;
+        
+        if (empty($ids)) {
+            return redirect()->back()->with('error', 'No items selected for deletion.');
+        }
+
+        try {
+            DB::beginTransaction();
+            
+            // Filter IDs to ensure user has permission to delete them
+            $devotionals = Devotional::whereIn('id', $ids)->get();
+            $deletedCount = 0;
+
+            foreach ($devotionals as $devotional) {
+                // Check if the current admin can delete this specific devotional
+                if (auth('admin')->user()->can('devotionals.delete', $devotional)) {
+                    $devotional->delete();
+                    $deletedCount++;
+                }
+            }
+
+            DB::commit();
+
+            if ($deletedCount > 0) {
+                return redirect()->back()->with('success', "Successfully deleted {$deletedCount} devotional(s).");
+            } else {
+                return redirect()->back()->with('error', 'No devotionals were deleted. You might not have the required permissions.');
+            }
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Bulk delete error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'An error occurred during bulk deletion.');
+        }
     }
 }

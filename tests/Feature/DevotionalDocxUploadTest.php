@@ -71,7 +71,7 @@ it('validates file size limit', function () {
     $response->assertSessionHasErrors('docx_file');
 });
 
-it('rejects .doc files (Word 97-2003 format) with helpful message', function () {
+it('accepts .doc files (Word 97-2003 format)', function () {
     // Create a fake .doc file with proper mime type
     $docFile = UploadedFile::fake()->create('document.doc', 100, 'application/msword');
 
@@ -81,6 +81,6 @@ it('rejects .doc files (Word 97-2003 format) with helpful message', function () 
             'default_status' => 'draft',
         ]);
 
-    // Should fail at validation due to mime type
-    $response->assertSessionHasErrors('docx_file');
+    // Should NOT fail at validation anymore
+    $response->assertSessionDoesntHaveErrors('docx_file');
 });

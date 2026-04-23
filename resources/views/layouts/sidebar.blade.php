@@ -128,7 +128,7 @@
         <div class="fixed-profile p-3 mx-4 mb-2 bg-secondary-subtle rounded mt-3">
           <div class="hstack gap-3">
             <div class="john-img">
-              <img src="{{ asset('storage/' . auth('admin')->user()->image) }}" 
+              <img src="{{ asset('uploads/admins/'.auth('admin')->user()->image) }}" 
                    class="rounded-circle" width="40" height="40" 
                    onerror="this.src='/assets/images/profile/user-1.jpg'"
                    alt="Admin Profile">
