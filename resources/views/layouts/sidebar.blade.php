@@ -58,6 +58,18 @@
             </li>
             @endcanany
             
+            @canany(['users.view', 'admin'])
+            <li class="sidebar-item">
+              <a class="{{ request()->routeIs('admin.referral-codes.*') ? 'sidebar-link active' : 'sidebar-link' }}" 
+                href="{{ route('admin.referral-codes.index') }}"  aria-expanded="false">
+                <span> 
+                  <i class="ti ti-ticket"></i>
+                </span>
+                <span class="hide-menu">Referral Codes</span>
+              </a>
+            </li>
+            @endcanany
+            
             <li class="sidebar-item">
               <a class="{{ request()->routeIs('admin.subscription.*') ? 'sidebar-link active' : 'sidebar-link' }}" 
                 href="{{ route('admin.subscription.index') }}"  aria-expanded="false">

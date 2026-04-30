@@ -22,7 +22,7 @@ class DevotionResource extends JsonResource
             'image' => $this->image ? asset('uploads/devotionals/'.$this->image) : null,
             'key_verse' => $this->key_verse,
             'verses' => $this->verses,
-            'date' => $this->date,
+            'date' => $this->date->format('M d, Y'),
             'application_note' => $this->application_note,
             'prayer_note' => $this->prayer_note,
             'subheading' => $this->subheading,

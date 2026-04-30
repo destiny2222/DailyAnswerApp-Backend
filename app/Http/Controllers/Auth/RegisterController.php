@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\ReferralCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Mail\AuthOtpMail;
@@ -22,6 +23,7 @@ class RegisterController extends Controller
             'username' => 'nullable|string|max:255',
             'password' => ['required', 'string', 'confirmed','min:8'],
             'cf-turnstile-response' => ['required'],
+            'referral_code' => ['nullable', 'string'],
         ]);
 
         try {
@@ -31,12 +33,28 @@ class RegisterController extends Controller
                 return response()->json(['errors' => 'Account already exists'], 422);
             }
 
-            $user = User::create([
+            $userData = [
                 'name' => $request->name,
                 'email' => $request->email,
                 'username' => $request->username,
                 'password' => Hash::make($request->password),
-            ]);
+            ];
+
+            if ($request->filled('referral_code')) {
+                $referralCode = ReferralCode::where('code', $request->referral_code)->first();
+                
+                if (!$referralCode || !$referralCode->isValid()) {
+                    return response()->json(['errors' => 'Invalid or expired referral code.'], 422);
+                }
+
+                $referralCode->increment('uses_count');
+
+                $userData['referral_code_id'] = $referralCode->id;
+                $userData['has_paid'] = true;
+                $userData['payment_expires_at'] = null;
+            }
+
+            $user = User::create($userData);
 
             // Generate OTP
             $otp = rand(100000, 999999);

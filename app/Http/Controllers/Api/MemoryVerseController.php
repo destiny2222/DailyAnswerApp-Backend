@@ -12,16 +12,7 @@ class MemoryVerseController extends Controller
 {
     public function list()
     {
-
         try {
-            //  $user = request()->user();
-            // if(!$user){
-            //     return response()->json([
-            //         'status' => 'error',
-            //         'message' => 'Unauthorized'
-            //     ], 401);
-            // }
-
             $memoryVerses = MemoryVerse::orderBy('id', 'asc')->get();
 
             return response()->json([
@@ -41,14 +32,6 @@ class MemoryVerseController extends Controller
     public function details($id)
     {
         try {
-            // $user = request()->user();
-            // if(!$user){
-            //     return response()->json([
-            //         'status' => 'error',
-            //         'message' => 'Unauthorized'
-            //     ], 401);
-            // }
-
             $memoryVerse = MemoryVerse::findOrFail($id);
 
             return response()->json([

@@ -32,6 +32,8 @@ class User extends Authenticatable
         'stripe_customer_id',
         'stripe_subscription_id',
         'subscription_plan',
+        'is_staff',
+        'referral_code_id',
     ];
 
     /**
@@ -57,6 +59,7 @@ class User extends Authenticatable
             'has_paid' => 'boolean',
             'payment_date' => 'datetime',
             'payment_expires_at' => 'datetime',
+            'is_staff' => 'boolean',
         ];
     }
 
@@ -65,6 +68,10 @@ class User extends Authenticatable
      */
     public function hasPaid(): bool
     {
+        if ($this->is_staff) {
+            return true;
+        }
+
         if (! $this->has_paid) {
             return false;
         }
@@ -89,5 +96,10 @@ class User extends Authenticatable
     public function supportPayments()
     {
         return $this->hasMany(SupportPayment::class);
+    }
+
+    public function referralCode()
+    {
+        return $this->belongsTo(ReferralCode::class);
     }
 }

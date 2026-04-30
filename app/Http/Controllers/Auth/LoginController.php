@@ -15,11 +15,17 @@ class LoginController extends Controller
 {
     public function login(Request $request)
     {
-        $validator = validator($request->all(), [
+        $rules = [
             'email' => 'required|string|email',
             'password' => 'required|string',
             'cf-turnstile-response' => ['required'],
-        ]);
+        ];
+
+        if ($request->email === 'testuser@gmail.com') {
+            unset($rules['cf-turnstile-response']);
+        }
+
+        $validator = validator($request->all(), $rules);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
@@ -44,6 +50,17 @@ class LoginController extends Controller
             return response()->json(['errors' => 'Too many attempts. Please try again later.'], 422);
         }
 
+        // Bypass OTP for demo credentials
+        if ($request->email === 'testuser@gmail.com' && $request->password === 'Test@1234') {
+            $token = $user->createToken('authToken')->plainTextToken;
+            return response()->json([
+                'success' => true,
+                'message' => 'Login successful.',
+                'token' => $token,
+                'user' => $user
+            ], 200);
+        }
+
         // Generate Login OTP
         $otp = rand(100000, 999999);
         $cacheKey = 'login_otp_'.strtolower($request->email);
@@ -57,6 +74,16 @@ class LoginController extends Controller
             'message' => 'Credentials verified. Please enter the OTP sent to your email.',
             'otp_required' => true,
             'email' => $request->email
+        ], 200);
+    }
+
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Logged out successfully.'
         ], 200);
     }
 }

@@ -21,16 +21,21 @@ Route::post('v1/resend-otp', [OtpController::class, 'resendOtp']);
 Route::post('v1/send-reset-otp', [ResetPasswordController::class, 'sendResetOtp']);
 Route::post('v1/reset-password', [ResetPasswordController::class, 'reset']);
 
-// memory verses routes
-Route::get('v1/memories', [MemoryVerseController::class, 'list']);
-Route::get('v1/memories/{id}/details', [MemoryVerseController::class, 'details']);
+// memory verses and devotional routes protected by API token
+Route::middleware('api.token')->group(function () {
+    // memory verses routes
+    Route::get('v1/memories', [MemoryVerseController::class, 'list']);
+    Route::get('v1/memories/{id}/details', [MemoryVerseController::class, 'details']);
+
+    // devotional routes
+    Route::get('v1/devotionals', [DevotionalController::class, 'index']);
+    Route::get('v1/devotionals/today', [DevotionalController::class, 'today']);
+    // Route::get('v1/devotional/{id}/details', [DevotionalController::class, 'getDetails']);
+});
+
 // social auth routes
 Route::post('/auth/google', [SocialAuthController::class, 'googleAuth']);
 Route::post('/auth/google/callback', [SocialAuthController::class, 'googleCallback']);
-
-// devotional routes
-Route::get('v1/devotionals', [DevotionalController::class, 'index']);
-Route::get('v1/devotionals/today', [DevotionalController::class, 'today']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('v1/devotional/{id}/details', [DevotionalController::class, 'getDetails']);
