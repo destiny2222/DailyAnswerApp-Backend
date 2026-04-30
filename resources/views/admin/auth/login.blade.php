@@ -12,24 +12,24 @@
 	<meta name="robots" content="index, follow">
 	<meta name="format-detection" content="telephone=no">
 	
-	<meta name="keywords" content="">
-	<meta name="description" content=" ">
+	<meta name="keywords" content="Admin Dashboard, The Daily Answer">
+	<meta name="description" content="The Daily Answer - Admin Dashboard">
 	
 	<!-- OPENGRAPH META -->
 	<meta property="og:title" content="Admin Dashboard">
-	<meta property="og:description" content=" ">
-	<meta property="og:image" content="https://hexabox.dexignlab.com/xhtml/social-image.png">
-	<meta property="og:url" content="https://hexabox.dexignlab.com/">
+	<meta property="og:description" content="The Daily Answer - Admin Dashboard">
+	<meta property="og:image" content="/favicon.png">
+	<meta property="og:url" content="https://thedailyanswer.org/">
 	<meta property="og:type" content="website">
 	
 	<!-- TWITTER META -->
 	<meta name="twitter:title" content="Admin Dashboard">
-	<meta name="twitter:description" content=" ">
-	<meta name="twitter:image" content="https://hexabox.dexignlab.com/xhtml/social-image.png">
+	<meta name="twitter:description" content="The Daily Answer - Admin Dashboard">
+	<meta name="twitter:image" content="/favicon.png">
 	<meta name="twitter:card" content="summary_large_image">
 	
 	<!-- FAVICONS ICON -->
-	<link rel="shortcut icon" type="image/png" href="/assets/images/favicon.png">
+	<link rel="shortcut icon" type="image/png" href="/favicon.png">
 	
 	<!-- MOBILE SPECIFIC -->
 	<meta name="viewport" content="width=device-width, initial-scale=1">
