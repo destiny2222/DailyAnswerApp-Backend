@@ -30,6 +30,7 @@ Route::middleware('api.token')->group(function () {
     // devotional routes
     Route::get('v1/devotionals', [DevotionalController::class, 'index']);
     Route::get('v1/devotionals/today', [DevotionalController::class, 'today']);
+    Route::get('v1/devotionals/upcoming', [DevotionalController::class, 'upcoming']);
     // Route::get('v1/devotional/{id}/details', [DevotionalController::class, 'getDetails']);
 });
 

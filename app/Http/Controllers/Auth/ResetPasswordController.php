@@ -16,7 +16,7 @@ class ResetPasswordController extends Controller
     {
         $validator = validator($request->all(), [
             'email' => 'required|string|email',
-            'cf-turnstile-response' => ['required'],
+            'g-recaptcha-response' => ['required', 'recaptcha'],
         ]);
 
         if ($validator->fails()) {

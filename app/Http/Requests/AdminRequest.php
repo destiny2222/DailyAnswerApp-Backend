@@ -28,7 +28,7 @@ class AdminRequest extends FormRequest
         return [
             'field'=>['required','string'],
             'password'=>['required'],
-            // 'cf-turnstile-response' => ['required'],
+            // 'g-recaptcha-response' => ['required', 'recaptcha'],
         ];
     }
     public function authenticate()

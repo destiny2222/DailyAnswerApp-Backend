@@ -40,7 +40,7 @@
 	<!-- Start - Style CSS -->
 	<link class="main-css" href="/assets/login/style.css" rel="stylesheet">
 	<!-- End - Style CSS -->
-	<x-turnstile.scripts />
+	<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
 </head>
 <body>
@@ -90,8 +90,8 @@
 							</div>
 						</div>
 						<div class="mb-3">
-							<x-turnstile />
-							@error('cf-turnstile-response')
+							<div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+							@error('g-recaptcha-response')
 								<div class="text-danger small mt-1">{{ $message }}</div>
 							@enderror
 						</div>

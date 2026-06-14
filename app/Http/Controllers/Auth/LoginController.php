@@ -18,11 +18,11 @@ class LoginController extends Controller
         $rules = [
             'email' => 'required|string|email',
             'password' => 'required|string',
-            'cf-turnstile-response' => ['required'],
+            'g-recaptcha-response' => ['required', 'recaptcha'],
         ];
 
         if ($request->email === 'testuser@gmail.com') {
-            unset($rules['cf-turnstile-response']);
+            unset($rules['g-recaptcha-response']);
         }
 
         $validator = validator($request->all(), $rules);

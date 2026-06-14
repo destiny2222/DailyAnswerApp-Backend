@@ -22,7 +22,7 @@ class RegisterController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'username' => 'nullable|string|max:255',
             'password' => ['required', 'string', 'confirmed','min:8'],
-            'cf-turnstile-response' => ['required'],
+            'g-recaptcha-response' => ['required', 'recaptcha'],
             'referral_code' => ['nullable', 'string'],
         ]);
 

@@ -132,7 +132,7 @@ class PaymentController extends Controller
         $request->validate([
             'amount' => 'required|numeric|min:1|max:999999',
             'is_recurring' => 'required|boolean',
-            'interval' => 'required_if:is_recurring,true|in:monthly,yearly',
+            'interval' => 'nullable|required_if:is_recurring,true|in:monthly,yearly',
         ]);
 
         $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
@@ -310,6 +310,7 @@ class PaymentController extends Controller
                     'user_id' => $user->id,
                     'amount' => $amount,
                     'type' => 'one_time',
+                    'status' => 'completed',
                     'payment_intent_id' => $paymentIntent->id,
                     'paid_at' => now(),
                 ]);
