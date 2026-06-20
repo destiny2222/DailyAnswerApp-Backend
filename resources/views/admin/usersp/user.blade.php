@@ -12,8 +12,11 @@
                             <th>
                                 <h6 class="fs-4 fw-semibold mb-0">Name</h6>
                             </th>
-                            <th>
+                            {{-- <th>
                                 <h6 class="fs-4 fw-semibold mb-0">Email Address</h6>
+                            </th> --}}
+                            <th>
+                                <h6 class="fs-4 fw-semibold mb-0">Phone Number</h6>
                             </th>
                             <th>
                                 <h6 class="fs-4 fw-semibold mb-0">Subscription Plan</h6>
@@ -36,12 +39,15 @@
                                                 width="40" height="40">
                                             <div class="ms-3">
                                                 <h6 class="fs-4 fw-semibold mb-0">{{ $usering->name }}</h6>
-                                                <span class="fw-normal">{{ $usering->username }}</span>
+                                                <span class="fw-normal">{{ $usering->email }}</span>
                                             </div>
                                         </div>
                                     </td>
-                                    <td>
+                                    {{-- <td>
                                         <p class="mb-0 fw-normal">{{ $usering->email }}</p>
+                                    </td> --}} 
+                                    <td>
+                                        <p class="mb-0 fw-normal">{{ $usering->phone }}</p>
                                     </td>
                                     <td>
                                         @if ($usering->has_paid)

@@ -6,23 +6,24 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\AuthOtpMail;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
+use App\Traits\SendsSmsOtp;
 
 class LoginController extends Controller
 {
+    use SendsSmsOtp;
+
     public function login(Request $request)
     {
         $rules = [
             'email' => 'required|string|email',
             'password' => 'required|string',
-            'g-recaptcha-response' => ['required', 'recaptcha'],
+            'cf-turnstile-response' => ['required', 'turnstile'],
         ];
 
         if ($request->email === 'testuser@gmail.com') {
-            unset($rules['g-recaptcha-response']);
+            unset($rules['cf-turnstile-response']);
         }
 
         $validator = validator($request->all(), $rules);
@@ -61,17 +62,21 @@ class LoginController extends Controller
             ], 200);
         }
 
+        if (empty($user->phone)) {
+            return response()->json(['errors' => ['phone' => ['A phone number is required on this account to receive OTP. Please contact support.']]], 422);
+        }
+
         // Generate Login OTP
         $otp = rand(100000, 999999);
         $cacheKey = 'login_otp_'.strtolower($request->email);
         Cache::put($cacheKey, $otp, now()->addMinutes(10));
 
-        // Send OTP
-        Mail::to($request->email)->send(new AuthOtpMail($otp, 'Use the code below to complete your login.'));
+        // Send OTP via Termii SMS
+        $this->sendOtpWithTermii($user->phone, $otp);
 
         return response()->json([
             'success' => true,
-            'message' => 'Credentials verified. Please enter the OTP sent to your email.',
+            'message' => 'Credentials verified. Please enter the OTP sent to your phone.',
             'otp_required' => true,
             'email' => $request->email
         ], 200);

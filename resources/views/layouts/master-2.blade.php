@@ -72,5 +72,6 @@
 <script src="https://cdn.ckeditor.com/ckeditor5/40.2.0/classic/ckeditor.js"></script>
   @stack('scripts')
   @stack('styles')
+  @include('partials.message')
 </body>
 </html>

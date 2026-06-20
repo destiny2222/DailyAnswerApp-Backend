@@ -40,11 +40,11 @@
                             @enderror
                         </div>
                         <div class="col-12 mb-3">
-                            <label class="form-label" for="basic-default-fullname">{{ __('Username') }}</label>
-                            <input type="text" value="{{ $user->username }}" name="username"
-                                class="form-control @error('username') is-invalid @enderror" id="basic-default-fullname"
-                                placeholder="Username" />
-                            @error('username')
+                            <label class="form-label" for="basic-default-fullname">{{ __('Phone Number') }}</label>
+                            <input type="text" value="{{ $user->phone }}" name="phone"
+                                class="form-control @error('phone') is-invalid @enderror" id="basic-default-fullname"
+                                placeholder="Phone Number" />
+                            @error('phone')
                                 <span class="invalid-feedback" role="alert">
                                     {{ $message }}
                                 </span>

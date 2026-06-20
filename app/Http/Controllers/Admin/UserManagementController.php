@@ -27,6 +27,7 @@ class UserManagementController extends BaseAdminController
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'username' => ['nullable', 'string', 'max:255', 'unique:users'],
+            'phone' => ['nullable', 'string', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'is_staff' => ['nullable', 'boolean'],
         ]);
@@ -73,7 +74,7 @@ class UserManagementController extends BaseAdminController
         try {
             $user->name = $request->name;
             $user->email = $request->email;
-            // $user->username = $request->username;
+            $user->phone = $request->phone; 
             $user->is_staff = $request->has('is_staff');
             
             if ($user->is_staff) {
