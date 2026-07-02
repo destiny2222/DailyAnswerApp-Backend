@@ -86,7 +86,7 @@
                         <tr>
                             <td class="content" style="background-color: #0f172a; padding: 30px 20px; text-align: center;">
                                 <h1 style="font-size: 24px; color: #fff; margin-bottom: 20px;">Your One-Time Password</h1>
-                                <p style="font-size: 16px; color: #fff; line-height: 1.5;">Use the code below to reset your password. This code will expire in 10 minutes.</p>
+                                <p style="font-size: 16px; color: #fff; line-height: 1.5;">Your password reset OTP is: {{ $otp ?? '123456' }}. Valid for 10 minutes. Do not share.</p>
                                 <div class="otp-code" style="font-size: 36px; font-weight: bold; color: #fff; margin: 30px 0; letter-spacing: 5px; padding: 15px; background-color: #f0f0f0; border-radius: 5px; display: inline-block;">
                                     {{ $otp ?? '123456' }}
                                 </div>

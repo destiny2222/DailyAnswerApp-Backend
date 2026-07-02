@@ -68,7 +68,8 @@ class LoginController extends Controller
         Cache::put($cacheKey, $otp, now()->addMinutes(10));
 
         // Send OTP via Email
-        Mail::to($user->email)->send(new AuthOtpMail($otp));
+        $appName = config('app.name', 'Daily Answer');
+        Mail::to($user->email)->send(new AuthOtpMail($otp, "Your {$appName} login OTP is: {$otp}. Valid for 10 minutes. Do not share."));
 
         return response()->json([
             'success' => true,
