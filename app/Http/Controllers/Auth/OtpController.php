@@ -6,11 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use App\Traits\SendsSmsOtp;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\AuthOtpMail;
 
 class OtpController extends Controller
 {
-    use SendsSmsOtp;
 
     public function verifyRegistrationOtp(Request $request)
     {
@@ -107,10 +107,6 @@ class OtpController extends Controller
             return response()->json(['errors' => ['email' => ['User not found.']]], 404);
         }
 
-        if (empty($user->phone)) {
-            return response()->json(['errors' => ['phone' => ['A phone number is required on this account to receive OTP. Please contact support.']]], 422);
-        }
-
         $otp = rand(100000, 999999);
         $cacheKey = $request->type . '_otp_' . strtolower($request->email);
         Cache::put($cacheKey, $otp, now()->addMinutes(10));
@@ -120,11 +116,12 @@ class OtpController extends Controller
             ? "Your {$appName} registration OTP is: {$otp}. Valid for 10 minutes. Do not share."
             : "Your {$appName} login OTP is: {$otp}. Valid for 10 minutes. Do not share.";
 
-        $this->sendOtpWithTermii($user->phone, $otp, $message);
+        // Send OTP via Email
+        Mail::to($user->email)->send(new AuthOtpMail($otp, $message));
 
         return response()->json([
             'success' => true,
-            'message' => 'OTP has been resent to your phone.'
+            'message' => 'OTP has been resent to your email.'
         ], 200);
     }
 }

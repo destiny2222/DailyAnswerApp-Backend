@@ -8,11 +8,10 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
-use App\Traits\SendsSmsOtp;
+use Illuminate\Support\Facades\Mail;
 
 class ResetPasswordController extends Controller
 {
-    use SendsSmsOtp;
 
     public function sendResetOtp(Request $request)
     {
@@ -36,22 +35,18 @@ class ResetPasswordController extends Controller
             ], 404);
         }
 
-        if (empty($user->phone)) {
-            return response()->json(['errors' => ['phone' => ['A phone number is required on this account to receive OTP. Please contact support.']]], 422);
-        }
-
         // Generate a 6-digit OTP
         $otp = rand(100000, 999999);
         // Store OTP in cache for 10 minutes
         $cacheKey = 'password_reset_otp_'.strtolower($email);
         Cache::put($cacheKey, $otp, now()->addMinutes(10));
         
-        // Send OTP via Termii SMS
-        $this->sendOtpWithTermii($user->phone, $otp);
+        // Send OTP via Email
+        Mail::to($user->email)->send(new PasswordResetOtpMail($otp));
 
         return response()->json([
             'success' => true,
-            'message' => 'OTP sent to phone',
+            'message' => 'OTP sent to email',
         ], 200);
     }
 

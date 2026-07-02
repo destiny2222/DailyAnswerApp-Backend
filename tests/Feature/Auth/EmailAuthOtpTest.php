@@ -1,17 +1,19 @@
 <?php
 
 use App\Models\User;
+use App\Mail\AuthOtpMail;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 
 beforeEach(function () {
+    Mail::fake();
     Http::fake([
         'https://challenges.cloudflare.com/turnstile/v0/siteverify' => Http::response(['success' => true], 200),
-        'https://v3.api.termii.com/*' => Http::response(['message_id' => '123456'], 200),
     ]);
 });
 
-it('registers a user and sends Termii OTP', function () {
+it('registers a user and sends Email OTP', function () {
     $response = $this->postJson('/api/v1/register', [
         'name' => 'John Doe',
         'email' => 'johndoe@example.com',
@@ -25,7 +27,7 @@ it('registers a user and sends Termii OTP', function () {
     $response->assertOk();
     $response->assertJson([
         'success' => true,
-        'message' => 'Registration successful. Please verify your account with the OTP sent to your phone.',
+        'message' => 'Registration successful. Please verify your account with the OTP sent to your email.',
         'otp_required' => true,
         'email' => 'johndoe@example.com'
     ]);
@@ -35,14 +37,12 @@ it('registers a user and sends Termii OTP', function () {
         'phone' => '08098765432',
     ]);
 
-    Http::assertSent(function ($request) {
-        return str_contains($request->url(), 'api.termii.com/api/sms/send') &&
-               $request['to'] === '+2348098765432' &&
-               str_contains($request['sms'], 'OTP');
+    Mail::assertSent(AuthOtpMail::class, function ($mail) {
+        return $mail->hasTo('johndoe@example.com') && str_contains($mail->message_text, 'registration OTP');
     });
 });
 
-it('logs in a user and sends Termii OTP', function () {
+it('logs in a user and sends Email OTP', function () {
     $user = User::factory()->create([
         'email' => 'user@example.com',
         'phone' => '09011112222',
@@ -58,33 +58,14 @@ it('logs in a user and sends Termii OTP', function () {
     $response->assertOk();
     $response->assertJson([
         'success' => true,
-        'message' => 'Credentials verified. Please enter the OTP sent to your phone.',
+        'message' => 'Credentials verified. Please enter the OTP sent to your email.',
         'otp_required' => true,
         'email' => 'user@example.com'
     ]);
 
-    Http::assertSent(function ($request) {
-        return str_contains($request->url(), 'api.termii.com/api/sms/send') &&
-               $request['to'] === '+2349011112222' &&
-               str_contains($request['sms'], 'OTP');
+    Mail::assertSent(AuthOtpMail::class, function ($mail) {
+        return $mail->hasTo('user@example.com');
     });
-});
-
-it('fails login if user has no phone number', function () {
-    $user = User::factory()->create([
-        'email' => 'nophone@example.com',
-        'phone' => null,
-        'password' => bcrypt('Password123!'),
-    ]);
-
-    $response = $this->postJson('/api/v1/login', [
-        'email' => 'nophone@example.com',
-        'password' => 'Password123!',
-        'cf-turnstile-response' => 'test-token',
-    ]);
-
-    $response->assertStatus(422);
-    $response->assertJsonValidationErrors(['phone']);
 });
 
 it('verifies registration OTP', function () {
@@ -131,7 +112,7 @@ it('verifies login OTP', function () {
     ]);
 });
 
-it('resends OTP via Termii SMS', function () {
+it('resends OTP via Email', function () {
     $user = User::factory()->create([
         'email' => 'resend@example.com',
         'phone' => '08122334477',
@@ -145,12 +126,10 @@ it('resends OTP via Termii SMS', function () {
     $response->assertOk();
     $response->assertJson([
         'success' => true,
-        'message' => 'OTP has been resent to your phone.',
+        'message' => 'OTP has been resent to your email.',
     ]);
 
-    Http::assertSent(function ($request) {
-        return str_contains($request->url(), 'api.termii.com/api/sms/send') &&
-               $request['to'] === '+2348122334477' &&
-               str_contains($request['sms'], 'OTP');
+    Mail::assertSent(AuthOtpMail::class, function ($mail) {
+        return $mail->hasTo('resend@example.com') && str_contains($mail->message_text, 'login OTP');
     });
 });

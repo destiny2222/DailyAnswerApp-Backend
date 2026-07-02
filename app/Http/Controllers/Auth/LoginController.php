@@ -8,11 +8,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
-use App\Traits\SendsSmsOtp;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\AuthOtpMail;
 
 class LoginController extends Controller
 {
-    use SendsSmsOtp;
 
     public function login(Request $request)
     {
@@ -62,21 +62,17 @@ class LoginController extends Controller
             ], 200);
         }
 
-        if (empty($user->phone)) {
-            return response()->json(['errors' => ['phone' => ['A phone number is required on this account to receive OTP. Please contact support.']]], 422);
-        }
-
         // Generate Login OTP
         $otp = rand(100000, 999999);
         $cacheKey = 'login_otp_'.strtolower($request->email);
         Cache::put($cacheKey, $otp, now()->addMinutes(10));
 
-        // Send OTP via Termii SMS
-        $this->sendOtpWithTermii($user->phone, $otp);
+        // Send OTP via Email
+        Mail::to($user->email)->send(new AuthOtpMail($otp));
 
         return response()->json([
             'success' => true,
-            'message' => 'Credentials verified. Please enter the OTP sent to your phone.',
+            'message' => 'Credentials verified. Please enter the OTP sent to your email.',
             'otp_required' => true,
             'email' => $request->email
         ], 200);

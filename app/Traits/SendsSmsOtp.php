@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\Log;
 trait SendsSmsOtp
 {
     /**
-     * Send OTP via Termii SMS
+     * Send OTP via SMSLive247 SMS
      */
-    private function sendOtpWithTermii(string $phone, string $otp, ?string $message = null)
+    private function sendOtpWithSmsLive247(string $phone, string $otp, ?string $message = null)
     {
         $formattedPhone = $this->formatPhone($phone);
         
@@ -19,25 +19,24 @@ trait SendsSmsOtp
         }
 
         $payload = [
-            'to' => $formattedPhone,
-            'from' => config('services.termii.sender_id'),
-            'sms' => $message,
-            'api_key' => config('services.termii.api_key'),
-            'type' => 'plain',
-            'channel' => 'generic',
+            'senderID' => config('services.smslive247.sender_id'),
+            'messageText' => $message,
+            'mobileNumber' => $formattedPhone,
         ];
 
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
-        ])->post(config('services.termii.base_url') . '/api/sms/send', $payload);
+            'Authorization' => 'Bearer ' . config('services.smslive247.api_key'),
+        ])->post(config('services.smslive247.base_url') . '/api/v4/sms', $payload);
 
         $result = $response->json();
 
-        if ($response->successful() && (isset($result['message_id']) || (isset($result['status']) && $result['status'] === 'success'))) {
+        if ($response->successful() && (isset($result['messageID']) || isset($result['batchID']))) {
             return $result;
         } else {
-            Log::error('Termii OTP Error', ['error' => $result['message'] ?? 'Unknown error']);
-            throw new \Exception('Failed to send OTP via Termii: ' . ($result['message'] ?? 'Unknown error'));
+            $errorMessage = $result['message'] ?? 'Unknown error';
+            Log::error('SMSLive247 OTP Error', ['error' => $errorMessage, 'response' => $result]);
+            throw new \Exception('Failed to send OTP via SMSLive247: ' . $errorMessage);
         }
     }
 
@@ -46,9 +45,7 @@ trait SendsSmsOtp
         $phone = preg_replace('/\D/', '', $phone);
 
         if (substr($phone, 0, 1) === '0') {
-            $phone = '+234' . substr($phone, 1);
-        } elseif (substr($phone, 0, 3) === '234') {
-            $phone = '+' . $phone;
+            $phone = '234' . substr($phone, 1);
         }
 
         return $phone;

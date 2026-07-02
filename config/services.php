@@ -73,9 +73,9 @@ return [
         'secret_key' => env('RECAPTCHA_SECRET_KEY'),
     ],
 
-    'termii' => [
-        'api_key' => env('TERMII_API_KEY'),
-        'sender_id' => env('TERMII_SENDER_ID', 'RioRelax'),
-        'base_url' => env('TERMII_BASE_URL', 'https://api.termii.com'),
+    'smslive247' => [
+        'api_key' => env('SMSLIVE247_API_KEY'),
+        'sender_id' => env('SMSLIVE247_SENDER_ID', 'RioRelax'),
+        'base_url' => env('SMSLIVE247_BASE_URL', 'https://api.smslive247.com'),
     ],
 ];

@@ -8,14 +8,13 @@ use App\Models\ReferralCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Mail\AuthOtpMail;
-use App\Traits\SendsSmsOtp;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterController extends Controller
 {
-    use SendsSmsOtp;
 
     public function register(Request $request)
     {
@@ -65,12 +64,12 @@ class RegisterController extends Controller
             $cacheKey = 'registration_otp_' . strtolower($request->email);
             Cache::put($cacheKey, $otp, now()->addMinutes(10));
 
-            // Send OTP via Termii SMS
-            $this->sendOtpWithTermii($user->phone, $otp);
+            // Send OTP via Email
+            Mail::to($user->email)->send(new AuthOtpMail($otp, 'Your DailyAnswer registration OTP is: ' . $otp . '. Valid for 10 minutes. Do not share.'));
 
             return response()->json([
                 'success' => true,
-                'message' => 'Registration successful. Please verify your account with the OTP sent to your phone.',
+                'message' => 'Registration successful. Please verify your account with the OTP sent to your email.',
                 'otp_required' => true,
                 'email' => $request->email
             ], 200);
