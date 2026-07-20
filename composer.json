@@ -17,6 +17,7 @@
         "laravel/tinker": "^2.10.1",
         "phpoffice/phpword": "^1.1",
         "realrashid/sweet-alert": "^7.3",
+
         "spatie/laravel-permission": "^6.24",
         "spatie/laravel-sluggable": "^3.7",
         "stripe/stripe-php": "^19.2"

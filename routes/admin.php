@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\MemoryVerseController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SubscriptionManagementController;
 use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\Admin\ReferralCodeController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -30,6 +31,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::prefix('users')->middleware('permission:users.view,admin')->group(function () {
             Route::get('/', [UserManagementController::class, 'index'])->name('customer.index');
             Route::get('/{id}/edit', [UserManagementController::class, 'edit'])->name('customer.edit');
+            Route::put('/{id}/update', [UserManagementController::class, 'update'])->name('customer.update');
             Route::delete('/{id}/delete', [UserManagementController::class, 'destroy'])->name('customer.delete');
         });
 
@@ -52,6 +54,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/bulk-create', [DevotionalController::class, 'showBulkCreate'])->name('devotionals.bulk-create');
             Route::post('/bulk-store', [DevotionalController::class, 'bulkStore'])->name('devotionals.bulk-store');
             Route::post('/docx-upload', [DevotionalController::class, 'docxUpload'])->name('devotionals.docx-upload');
+            Route::delete('/bulk-delete', [DevotionalController::class, 'bulkDelete'])->name('devotionals.bulk-delete');
             Route::get('/{devotional}', [DevotionalController::class, 'show'])->name('devotionals.show');
             Route::get('/{devotional}/edit', [DevotionalController::class, 'edit'])->name('devotionals.edit');
             Route::put('/{devotional}/update', [DevotionalController::class, 'update'])->name('devotionals.update');
@@ -90,6 +93,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/{id}/edit', [SubscriptionManagementController::class, 'edit'])->name('subscription.edit');
             Route::put('/{id}/update', [SubscriptionManagementController::class, 'update'])->name('subscription.update');
             Route::delete('/{id}/delete', [SubscriptionManagementController::class, 'destroy'])->name('subscription.delete');
+        });
+
+        // Referral Codes Management
+        Route::prefix('referral-codes')->middleware('permission:users.view,admin')->group(function () {
+            Route::get('/', [ReferralCodeController::class, 'index'])->name('referral-codes.index');
+            Route::get('/create', [ReferralCodeController::class, 'create'])->name('referral-codes.create');
+            Route::post('/store', [ReferralCodeController::class, 'store'])->name('referral-codes.store');
+            Route::get('/{id}', [ReferralCodeController::class, 'show'])->name('referral-codes.show');
+            Route::get('/{id}/edit', [ReferralCodeController::class, 'edit'])->name('referral-codes.edit');
+            Route::put('/{id}/update', [ReferralCodeController::class, 'update'])->name('referral-codes.update');
+            Route::delete('/{id}/delete', [ReferralCodeController::class, 'destroy'])->name('referral-codes.destroy');
         });
 
     });

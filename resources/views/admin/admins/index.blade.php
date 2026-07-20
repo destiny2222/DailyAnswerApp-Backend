@@ -50,7 +50,7 @@
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ asset('storage/' . $admin->image) }}" 
+                                        <img src="{{ asset('uploads/admins/'.$admin->image) }}" 
                                              class="rounded-circle" width="40" height="40" 
                                              onerror="this.src='/assets/images/profile/user-1.jpg'">
                                         <div class="ms-3">

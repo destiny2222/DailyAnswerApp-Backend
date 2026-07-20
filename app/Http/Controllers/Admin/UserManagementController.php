@@ -26,9 +26,17 @@ class UserManagementController extends BaseAdminController
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'username' => ['required', 'string', 'max:255', 'unique:users'],
+            'username' => ['nullable', 'string', 'max:255', 'unique:users'],
+            'phone' => ['nullable', 'string', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'is_staff' => ['nullable', 'boolean'],
         ]);
+
+        $validated['is_staff'] = $request->has('is_staff');
+        if ($validated['is_staff']) {
+            $validated['has_paid'] = true;
+            $validated['payment_expires_at'] = null;
+        }
 
         try {
             User::create($validated);
@@ -60,13 +68,20 @@ class UserManagementController extends BaseAdminController
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
-            'username' => 'required|string|max:255|unique:users,username,'.$user->id,
+            // 'username' => 'nullable|string|max:255|unique:users,username,'.$user->id,
         ]);
 
         try {
             $user->name = $request->name;
             $user->email = $request->email;
-            $user->username = $request->username;
+            $user->phone = $request->phone; 
+            $user->is_staff = $request->has('is_staff');
+            
+            if ($user->is_staff) {
+                $user->has_paid = true;
+                $user->payment_expires_at = null;
+            }
+
             $user->save();
 
             return redirect()->route('admin.customer.index')->with('success', 'User updated successfully.');

@@ -3,7 +3,8 @@
     <p class="mb-2">Each devotional should follow this format (in order):</p>
     <ol class="mb-0">
         <li><strong>Date:</strong> First line (e.g., "Sunday, March 29th, 2026")</li>
-        <li><strong>Subheading:</strong> Second line - reading plan/reference (e.g., "Psalm in a Year. 1 Samuel 26-29")</li>
+        <li><strong>Subheading:</strong> Second line - reading plan/reference (e.g., "Psalm in a Year. 1 Samuel 26-29")
+        </li>
         <li><strong>Title:</strong> Third line, in bold/caps (e.g., "MAKE TIME TO BE QUIET BEFORE GOD")</li>
         <li><strong>Key Verse:</strong> Fourth line - the scripture text after the title</li>
         <li><strong>Content:</strong> Main paragraphs of the devotional</li>
@@ -12,18 +13,20 @@
         <li><strong>Prayer:</strong> Line starting with "Prayer:" followed by prayer text</li>
         <li><strong>Separator:</strong> Use a page break or "---" on a new line to separate devotionals</li>
     </ol>
-    <p class="mt-2"><small class="text-muted">Tip: Copy your existing Word devotionals - the parser will automatically detect this format!</small></p>
+    <p class="mt-2"><small class="text-muted">Tip: Copy your existing Word devotionals - the parser will automatically
+            detect this format!</small></p>
 </div>
 
 <form action="{{ route('admin.devotionals.docx-upload') }}" method="POST" enctype="multipart/form-data">
     @csrf
-    
+
     <div class="form-group">
         <label for="docx_file" class="form-label">
             <i class="fas fa-file-word"></i> Upload Word Document <span class="text-danger">*</span>
         </label>
-        <input type="file" name="docx_file" id="docx_file" class="form-control" 
-               accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
+        <input type="file" name="docx_file" id="docx_file" class="form-control"
+            accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            required>
         <small class="form-text text-muted">Accepts .doc and .docx files. Maximum file size: 5MB</small>
     </div>
 

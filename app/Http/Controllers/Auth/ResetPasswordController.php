@@ -9,33 +9,40 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Validator;
 
 class ResetPasswordController extends Controller
 {
+
     public function sendResetOtp(Request $request)
     {
-        $validated = Validator::make($request->all(), [
+        $validator = validator($request->all(), [
             'email' => 'required|string|email',
+            'cf-turnstile-response' => ['required', 'turnstile'],
         ]);
 
-        if ($validated->fails()) {
-            return response()->json(['errors' => $validated->errors()], 422);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
         $email = $request->input('email');
 
         $user = User::where('email', $email)->first();
+
         if (! $user) {
-            return response()->json(['errors' => ['email' => ['User not found']]], 404);
+            return response()->json([
+                'errors' => ['email' => ['User not found']],
+                'message' => 'User not found',
+            ], 404);
         }
+
         // Generate a 6-digit OTP
         $otp = rand(100000, 999999);
         // Store OTP in cache for 10 minutes
         $cacheKey = 'password_reset_otp_'.strtolower($email);
         Cache::put($cacheKey, $otp, now()->addMinutes(10));
-        // Send OTP via email
-        Mail::to($email)->send(new PasswordResetOtpMail($otp));
+        
+        // Send OTP via Email
+        Mail::to($user->email)->send(new PasswordResetOtpMail($otp));
 
         return response()->json([
             'success' => true,
@@ -45,15 +52,15 @@ class ResetPasswordController extends Controller
 
     public function reset(Request $request)
     {
-        $validated = Validator::make($request->all(), [
+        $validator = validator($request->all(), [
             'email' => 'required|string|email',
             'otp' => 'required|string',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        if ($validated->fails()) {
+        if ($validator->fails()) {
             return response()->json([
-                'errors' => $validated->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 

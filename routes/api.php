@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\MFACustomController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\OtpController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -20,26 +21,27 @@ Route::get('v1/csrf-token', function () {
 
 Route::post('v1/login', [LoginController::class, 'login']);
 Route::post('v1/register', [RegisterController::class, 'register']);
+Route::post('v1/verify-registration-otp', [OtpController::class, 'verifyRegistrationOtp']);
+Route::post('v1/verify-login-otp', [OtpController::class, 'verifyLoginOtp']);
+Route::post('v1/resend-otp', [OtpController::class, 'resendOtp']);
 Route::post('v1/send-reset-otp', [ResetPasswordController::class, 'sendResetOtp']);
 Route::post('v1/reset-password', [ResetPasswordController::class, 'reset']);
 
-// MFA Routes
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('v1/mfa/setup', [MFACustomController::class, 'setup']);
-    Route::post('v1/mfa/activate', [MFACustomController::class, 'activate']);
-    Route::post('v1/mfa/verify', [MFACustomController::class, 'verify']);
+// memory verses and devotional routes protected by API token
+Route::middleware('api.token')->group(function () {
+    // memory verses routes
+    Route::get('v1/memories', [MemoryVerseController::class, 'list']);
+    Route::get('v1/memories/{id}/details', [MemoryVerseController::class, 'details']);
+
+    // devotional routes
+    Route::get('v1/devotionals', [DevotionalController::class, 'index']);
+    Route::get('v1/devotionals/today', [DevotionalController::class, 'today']);
+    Route::get('v1/devotionals/upcoming', [DevotionalController::class, 'upcoming']);
 });
 
-// memory verses routes
-Route::get('v1/memories', [MemoryVerseController::class, 'list']);
-Route::get('v1/memories/{id}/details', [MemoryVerseController::class, 'details']);
 // social auth routes
 Route::post('/auth/google', [SocialAuthController::class, 'googleAuth']);
 Route::post('/auth/google/callback', [SocialAuthController::class, 'googleCallback']);
-
-// devotional routes
-Route::get('v1/devotionals', [DevotionalController::class, 'index']);
-Route::get('v1/devotionals/today', [DevotionalController::class, 'today']);
 
 Route::middleware(['auth:sanctum', 'api.encrypt'])->group(function () {
     Route::get('v1/mfa/setup', [MFACustomController::class, 'setup']);

@@ -58,6 +58,18 @@
             </li>
             @endcanany
             
+            @canany(['users.view', 'admin'])
+            <li class="sidebar-item">
+              <a class="{{ request()->routeIs('admin.referral-codes.*') ? 'sidebar-link active' : 'sidebar-link' }}" 
+                href="{{ route('admin.referral-codes.index') }}"  aria-expanded="false">
+                <span> 
+                  <i class="ti ti-ticket"></i>
+                </span>
+                <span class="hide-menu">Referral Codes</span>
+              </a>
+            </li>
+            @endcanany
+            
             <li class="sidebar-item">
               <a class="{{ request()->routeIs('admin.subscription.*') ? 'sidebar-link active' : 'sidebar-link' }}" 
                 href="{{ route('admin.subscription.index') }}"  aria-expanded="false">
@@ -128,7 +140,7 @@
         <div class="fixed-profile p-3 mx-4 mb-2 bg-secondary-subtle rounded mt-3">
           <div class="hstack gap-3">
             <div class="john-img">
-              <img src="{{ asset('storage/' . auth('admin')->user()->image) }}" 
+              <img src="{{ asset('uploads/admins/'.auth('admin')->user()->image) }}" 
                    class="rounded-circle" width="40" height="40" 
                    onerror="this.src='/assets/images/profile/user-1.jpg'"
                    alt="Admin Profile">

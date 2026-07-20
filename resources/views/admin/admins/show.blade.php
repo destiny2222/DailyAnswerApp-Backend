@@ -17,7 +17,7 @@
         <div class="card-body p-4">
             <div class="row">
                 <div class="col-md-3 text-center mb-4">
-                    <img src="{{ asset('storage/' . $admin->image) }}" 
+                    <img src="{{ asset('uploads/admins/'. $admin->image) }}" 
                          class="rounded-circle mb-3" width="150" height="150"
                          onerror="this.src='/assets/images/profile/user-1.jpg'">
                 </div>

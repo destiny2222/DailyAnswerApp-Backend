@@ -27,7 +27,7 @@ class UpdateDevotionalRequest extends FormRequest
             'content' => ['required', 'string'],
             'author' => ['nullable', 'string', 'max:255'],
             'image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
-            'key_verse' => ['nullable', 'string', 'max:500'],
+            'key_verse' => ['nullable', 'string'],
             'application_note' => ['nullable', 'string'],
             'prayer_note' => ['nullable', 'string'],
             'verses' => ['nullable', 'string'],

@@ -25,7 +25,7 @@
                         @if($devotional->image)
                         <div class="col-md-6">
                             <p><strong>Image:</strong></p>
-                            <img src="{{ asset('storage/' . $devotional->image) }}" alt="{{ $devotional->title }}" class="img-fluid img-thumbnail" style="width: 200px;height:200px">
+                            <img src="{{ asset('uploads/devotionals/'.$devotional->image) }}" alt="{{ $devotional->title }}" class="img-fluid img-thumbnail" style="width: 200px;height:200px">
                         </div>
                         @endif
                     </div>

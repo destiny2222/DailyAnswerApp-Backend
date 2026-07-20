@@ -27,7 +27,8 @@ class AdminRequest extends FormRequest
     {
         return [
             'field'=>['required','string'],
-            'password'=>['required']
+            'password'=>['required'],
+            // 'g-recaptcha-response' => ['required', 'recaptcha'],
         ];
     }
     public function authenticate()

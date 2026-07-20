@@ -12,24 +12,24 @@
 	<meta name="robots" content="index, follow">
 	<meta name="format-detection" content="telephone=no">
 	
-	<meta name="keywords" content="">
-	<meta name="description" content=" ">
+	<meta name="keywords" content="Admin Dashboard, The Daily Answer">
+	<meta name="description" content="The Daily Answer - Admin Dashboard">
 	
 	<!-- OPENGRAPH META -->
 	<meta property="og:title" content="Admin Dashboard">
-	<meta property="og:description" content=" ">
-	<meta property="og:image" content="https://hexabox.dexignlab.com/xhtml/social-image.png">
-	<meta property="og:url" content="https://hexabox.dexignlab.com/">
+	<meta property="og:description" content="The Daily Answer - Admin Dashboard">
+	<meta property="og:image" content="/favicon.png">
+	<meta property="og:url" content="https://thedailyanswer.org/">
 	<meta property="og:type" content="website">
 	
 	<!-- TWITTER META -->
 	<meta name="twitter:title" content="Admin Dashboard">
-	<meta name="twitter:description" content=" ">
-	<meta name="twitter:image" content="https://hexabox.dexignlab.com/xhtml/social-image.png">
+	<meta name="twitter:description" content="The Daily Answer - Admin Dashboard">
+	<meta name="twitter:image" content="/favicon.png">
 	<meta name="twitter:card" content="summary_large_image">
 	
 	<!-- FAVICONS ICON -->
-	<link rel="shortcut icon" type="image/png" href="/assets/images/favicon.png">
+	<link rel="shortcut icon" type="image/png" href="/favicon.png">
 	
 	<!-- MOBILE SPECIFIC -->
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -40,6 +40,7 @@
 	<!-- Start - Style CSS -->
 	<link class="main-css" href="/assets/login/style.css" rel="stylesheet">
 	<!-- End - Style CSS -->
+	<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
 </head>
 <body>
@@ -82,11 +83,17 @@
 								</span>
 							</div>
 						</div>
-						<div class="d-flex gap-2 flex-wrap justify-content-between mb-4 mb-lg-5">
+						<div class="d-flex gap-2 flex-wrap justify-content-between mb-3">
 							<div class="form-check custom-checkbox mb-0">
 								<input type="checkbox" class="form-check-input" id="customCheckBox1" name="remember">
 								<label class="form-check-label" for="customCheckBox1">Remember me</label>
 							</div>
+						</div>
+						<div class="mb-3">
+							<div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}"></div>
+							@error('cf-turnstile-response')
+								<div class="text-danger small mt-1">{{ $message }}</div>
+							@enderror
 						</div>
 						<div class="text-center mb-4">
 							<button type="submit" class="btn btn-primary btn-lg w-100 mb-3">Sign In</button>

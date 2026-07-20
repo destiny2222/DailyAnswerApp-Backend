@@ -45,7 +45,7 @@
       <!--  Header Start -->
       @include('layouts.topbar')
       <!--  Header End -->
-      @include('layouts.aside')
+      {{-- @include('layouts.aside') --}}
       <div class="body-wrapper">
         <div class="container-fluid">
           @yield('content')
@@ -72,5 +72,6 @@
 <script src="https://cdn.ckeditor.com/ckeditor5/40.2.0/classic/ckeditor.js"></script>
   @stack('scripts')
   @stack('styles')
+  @include('partials.message')
 </body>
 </html>

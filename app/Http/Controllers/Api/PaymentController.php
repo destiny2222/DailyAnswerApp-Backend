@@ -67,13 +67,23 @@ class PaymentController extends Controller
 
         try {
             // Create or retrieve Stripe customer
-            try {
-                if ($user->stripe_customer_id) {
+            $customer = null;
+            if ($user->stripe_customer_id) {
+                try {
                     $customer = Customer::retrieve($user->stripe_customer_id);
-                } else {
-                    throw new \Exception('No customer id');
+                    // Ensure the customer is still valid (not deleted)
+                    if (!empty($customer->deleted)) {
+                        Log::warning("Stripe customer {$user->stripe_customer_id} was deleted. Creating a new one for user {$user->id}.");
+                        $customer = null;
+                    }
+                } catch (\Exception $e) {
+                    // Customer doesn't exist in current Stripe mode/account (e.g. key changed from test to live)
+                    Log::warning("Could not retrieve Stripe customer {$user->stripe_customer_id} for user {$user->id}: {$e->getMessage()}. Creating a new customer.");
+                    $customer = null;
                 }
-            } catch (\Exception $e) {
+            }
+
+            if (!$customer) {
                 $customer = Customer::create([
                     'email' => $user->email,
                     'name' => $user->name,
@@ -122,7 +132,7 @@ class PaymentController extends Controller
         $request->validate([
             'amount' => 'required|numeric|min:1|max:999999',
             'is_recurring' => 'required|boolean',
-            'interval' => 'required_if:is_recurring,true|in:monthly,yearly',
+            'interval' => 'nullable|required_if:is_recurring,true|in:monthly,yearly',
         ]);
 
         $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
@@ -135,13 +145,21 @@ class PaymentController extends Controller
         try {
 
             // Create or get existing customer
-            try {
-                if ($user->stripe_customer_id) {
+            $customer = null;
+            if ($user->stripe_customer_id) {
+                try {
                     $customer = $stripe->customers->retrieve($user->stripe_customer_id);
-                } else {
-                    throw new \Exception('No customer id');
+                    if (!empty($customer->deleted)) {
+                        Log::warning("Stripe customer {$user->stripe_customer_id} was deleted. Creating a new one for user {$user->id}.");
+                        $customer = null;
+                    }
+                } catch (\Exception $e) {
+                    Log::warning("Could not retrieve Stripe customer {$user->stripe_customer_id} for user {$user->id}: {$e->getMessage()}. Creating a new customer.");
+                    $customer = null;
                 }
-            } catch (\Exception $e) {
+            }
+
+            if (!$customer) {
                 $customer = $stripe->customers->create([
                     'email' => $user->email,
                     'name' => $user->name,
@@ -292,6 +310,7 @@ class PaymentController extends Controller
                     'user_id' => $user->id,
                     'amount' => $amount,
                     'type' => 'one_time',
+                    'status' => 'completed',
                     'payment_intent_id' => $paymentIntent->id,
                     'paid_at' => now(),
                 ]);
@@ -321,6 +340,20 @@ class PaymentController extends Controller
                 ]);
             }
 
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
+            // Detect Stripe mode mismatch (e.g. test key payment_intent confirmed with live key)
+            if (str_contains($e->getMessage(), 'a similar object exists in') || str_contains($e->getMessage(), 'No such payment_intent')) {
+                Log::warning("Stripe mode mismatch on confirmPayment for user {$request->user()->id}: {$e->getMessage()}");
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Payment session expired. Please restart the payment process.',
+                    'retry' => true,
+                ], 400);
+            }
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

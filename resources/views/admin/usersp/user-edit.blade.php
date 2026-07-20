@@ -13,7 +13,7 @@
     <div class="row justify-content-center">
         <div class="col-lg-10 pt-5 ">
             <div class="card p-3  m-auto">
-                <form action="{{ route('admin.customer-update', $user->id) }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('admin.customer.update', $user->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('put')
                     <div class="row">
@@ -40,11 +40,11 @@
                             @enderror
                         </div>
                         <div class="col-12 mb-3">
-                            <label class="form-label" for="basic-default-fullname">{{ __('Username') }}</label>
-                            <input type="text" value="{{ $user->username }}" name="username"
-                                class="form-control @error('username') is-invalid @enderror" id="basic-default-fullname"
-                                placeholder="Username" />
-                            @error('username')
+                            <label class="form-label" for="basic-default-fullname">{{ __('Phone Number') }}</label>
+                            <input type="text" value="{{ $user->phone }}" name="phone"
+                                class="form-control @error('phone') is-invalid @enderror" id="basic-default-fullname"
+                                placeholder="Phone Number" />
+                            @error('phone')
                                 <span class="invalid-feedback" role="alert">
                                     {{ $message }}
                                 </span>
@@ -60,6 +60,13 @@
                                     {{ $message }}
                                 </span>
                             @enderror
+                        </div>
+                        <div class="col-12 mb-3">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" role="switch" id="is_staff" name="is_staff" value="1" {{ $user->is_staff ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold" for="is_staff">Is Staff?</label>
+                                <small class="d-block text-muted">Staff members get free access to devotionals.</small>
+                            </div>
                         </div>
                     </div>
                     <div class="row g-2">

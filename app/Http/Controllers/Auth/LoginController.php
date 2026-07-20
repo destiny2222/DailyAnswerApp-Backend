@@ -6,24 +6,34 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Http; // Added this line
 use Illuminate\Support\Str;
 use App\Mail\PasswordResetOtpMail;
+use App\Mail\AuthOtpMail;
 
 class LoginController extends Controller
 {
+
     public function login(Request $request)
     {
-        $validated = Validator::make($request->all(), [
+        $rules = [
             'email' => 'required|string|email',
             'password' => 'required|string',
-        ]);
+            'cf-turnstile-response' => ['required', 'turnstile'],
+        ];
 
-        if ($validated->fails()) {
-            return response()->json(['errors' => $validated->errors()], 422);
+        if ($request->email === 'testuser@gmail.com') {
+            unset($rules['cf-turnstile-response']);
+        }
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
         $throttleKey = Str::lower($request->input('email')) . '|' . $request->ip();
@@ -32,11 +42,11 @@ class LoginController extends Controller
         // Fix 6: CAPTCHA / Bot Detection (Trigger after 3 fails)
         $fails = \Illuminate\Support\Facades\Cache::get($failCountKey, 0);
         if ($fails >= 3) {
-            $validated = Validator::make($request->all(), [
+            $captchaValidated = \Illuminate\Support\Facades\Validator::make($request->all(), [
                 'turnstile_token' => 'required|string',
             ]);
 
-            if ($validated->fails()) {
+            if ($captchaValidated->fails()) {
                 return response()->json(['errors' => ['CAPTCHA verification required.'], 'captcha_required' => true], 422);
             }
 
@@ -56,43 +66,14 @@ class LoginController extends Controller
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
             $seconds = RateLimiter::availableIn($throttleKey);
             
-            // Logic for escalating lockout (simplified for this context)
-            // If already hit 5 attempts, lockout for 15 mins (900s)
-            // Laravel default is usually per minute, but we can customize.
-            
             return response()->json([
                 'errors' => ["Too many login attempts. Please try again in $seconds seconds."],
                 'lockout_seconds' => $seconds
             ], 429);
         }
 
-        // Authentication logic
-        if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
-            RateLimiter::clear($throttleKey);
-            $user = Auth::user();
-
-            // Fix 7: Multi-Factor Authentication (MFA) Check
-            if ($user->google2fa_secret) {
-                // If MFA is enabled, don't return the full token yet
-                // Instead, return a temporary token or just the requirement
-                return response()->json([
-                    'success' => true,
-                    'mfa_required' => true,
-                    'message' => 'MFA verification required.'
-                ], 200);
-            }
-            
-            $token = $user->createToken('authToken')->plainTextToken;
-
-            // Fix 1: Rotate tokens on login
-            $user->tokens()->where('id', '!=', $user->currentAccessToken()->id ?? null)->delete();
-
-            return response()->json([
-                'success' => true,
-                'token' => $token,
-                'user' => $user
-            ], 200);
-        } else {
+        $user = User::where('email', $request->email)->first();
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             RateLimiter::hit($throttleKey, 900); // 15 minutes lockout after 5 hits
             \Illuminate\Support\Facades\Cache::increment($failCountKey, 1);
             \Illuminate\Support\Facades\Cache::put($failCountKey, \Illuminate\Support\Facades\Cache::get($failCountKey), 900);
@@ -104,8 +85,61 @@ class LoginController extends Controller
                 });
             }
 
-            // Fix 4: Verbose Authentication Error Messages
             return response()->json(['errors' => ['Invalid email address or password.']], 401);
         }
+
+        RateLimiter::clear($throttleKey);
+
+        // Fix 7: Multi-Factor Authentication (MFA) Check
+        if ($user->google2fa_secret) {
+            return response()->json([
+                'success' => true,
+                'mfa_required' => true,
+                'message' => 'MFA verification required.'
+            ], 200);
+        }
+
+        // too much attempt check
+        $tooMuchAttempt = Cache::get('too_much_attempt_'.$request->email);
+        if ($tooMuchAttempt) {
+            return response()->json(['errors' => 'Too many attempts. Please try again later.'], 422);
+        }
+
+        // Bypass OTP for demo credentials
+        if ($request->email === 'testuser@gmail.com' && $request->password === 'Test@1234') {
+            $token = $user->createToken('authToken')->plainTextToken;
+            return response()->json([
+                'success' => true,
+                'message' => 'Login successful.',
+                'token' => $token,
+                'user' => $user
+            ], 200);
+        }
+
+        // Generate Login OTP
+        $otp = rand(100000, 999999);
+        $cacheKey = 'login_otp_'.strtolower($request->email);
+        Cache::put($cacheKey, $otp, now()->addMinutes(10));
+
+        // Send OTP via Email
+        $appName = config('app.name', 'Daily Answer');
+        Mail::to($user->email)->send(new AuthOtpMail($otp, "Your {$appName} login OTP is: {$otp}. Valid for 10 minutes. Do not share."));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Credentials verified. Please enter the OTP sent to your email.',
+            'otp_required' => true,
+            'email' => $request->email
+        ], 200);
+    }
+
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Logged out successfully.'
+        ], 200);
     }
 }

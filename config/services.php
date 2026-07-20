@@ -62,4 +62,20 @@ return [
         'client_secret' => env('GITHUB_CLIENT_SECRET'),
         'redirect' => 'your_redirect_url',
     ],
+
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY'),
+        'secret_key' => env('TURNSTILE_SECRET_KEY'),
+    ],
+
+    'recaptcha' => [
+        'site_key' => env('RECAPTCHA_SITE_KEY'),
+        'secret_key' => env('RECAPTCHA_SECRET_KEY'),
+    ],
+
+    'smslive247' => [
+        'api_key' => env('SMSLIVE247_API_KEY'),
+        'sender_id' => env('SMSLIVE247_SENDER_ID', 'RioRelax'),
+        'base_url' => env('SMSLIVE247_BASE_URL', 'https://api.smslive247.com'),
+    ],
 ];

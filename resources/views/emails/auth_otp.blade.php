@@ -23,29 +23,16 @@
             padding: 20px;
         }
         .header {
-            background-color: #ffffff;
+            background-color: #0f172a;
             padding: 20px;
             text-align: center;
             border-top-left-radius: 5px;
             border-top-right-radius: 5px;
         }
-        .header img {
-            max-width: 150px;
-        }
         .content {
-            background-color: #ffffff;
+            background-color: #0f172a;
             padding: 30px 20px;
             text-align: center;
-        }
-        .content h1 {
-            font-size: 24px;
-            color: #333333;
-            margin-bottom: 20px;
-        }
-        .content p {
-            font-size: 16px;
-            color: #666666;
-            line-height: 1.5;
         }
         .otp-code {
             font-size: 36px;
@@ -79,24 +66,23 @@
                     <table border="0" cellpadding="0" cellspacing="0" width="100%">
                         <tr>
                             <td class="header" style="background-color: #0f172a; padding: 20px; text-align: center; border-top-left-radius: 5px; border-top-right-radius: 5px;">
-                                {{-- Replace with your logo --}}
                                 <h1 style="font-size: 28px; color: #fff; margin: 0;">DailyAnswer</h1>
                             </td>
                         </tr>
                         <tr>
                             <td class="content" style="background-color: #0f172a; padding: 30px 20px; text-align: center;">
                                 <h1 style="font-size: 24px; color: #fff; margin-bottom: 20px;">Your One-Time Password</h1>
-                                <p style="font-size: 16px; color: #fff; line-height: 1.5;">Your password reset OTP is: {{ $otp ?? '123456' }}. Valid for 10 minutes. Do not share.</p>
-                                <div class="otp-code" style="font-size: 36px; font-weight: bold; color: #fff; margin: 30px 0; letter-spacing: 5px; padding: 15px; background-color: #f0f0f0; border-radius: 5px; display: inline-block;">
-                                    {{ $otp ?? '123456' }}
+                                <p style="font-size: 16px; color: #fff; line-height: 1.5;">{{ $message_text }}</p>
+                                <div class="otp-code" style="font-size: 36px; font-weight: bold; color: #313131; margin: 30px 0; letter-spacing: 5px; padding: 15px; background-color: #ffffff; border-radius: 5px; display: inline-block;">
+                                    {{ $otp }}
                                 </div>
-                                <p style="font-size: 16px; color: #fff; line-height: 1.5;">If you did not request a password reset, please ignore this email.</p>
+                                <p style="font-size: 16px; color: #fff; line-height: 1.5;">This code will expire in 10 minutes.</p>
+                                <p style="font-size: 14px; color: #999999; line-height: 1.5;">If you did not request this, please ignore this email.</p>
                             </td>
                         </tr>
                         <tr>
                             <td class="footer" style="background-color: #0f172a; padding: 20px; text-align: center; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px;">
                                 <p style="font-size: 12px; color: #999999;">&copy; {{ date('Y') }} DailyAnswer. All rights reserved.</p>
-                                <p style="font-size: 12px; color: #999999;">123 Main Street, Anytown, USA</p>
                             </td>
                         </tr>
                     </table>
