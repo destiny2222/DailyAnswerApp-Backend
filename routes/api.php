@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\DevotionalController;
 use App\Http\Controllers\Api\MemoryVerseController;
 use App\Http\Controllers\Api\NoteController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Auth\LoginController;
@@ -48,6 +49,7 @@ Route::middleware(['auth:sanctum', 'api.encrypt'])->group(function () {
 
 Route::middleware(['auth:sanctum', 'api.encrypt'])->prefix('v1/payment')->group(function () {
     Route::get('/plans', [PaymentController::class, 'getSubscriptionPlans']);
+    Route::post('/verify-receipt', [SubscriptionController::class, 'verifyReceipt']);
     Route::post('/create-subscription', [PaymentController::class, 'createSubscription']);
     Route::post('/create-support', [PaymentController::class, 'createSupport']);
     Route::post('/confirm-recurring-support', [PaymentController::class, 'confirmRecurringSupport']);
