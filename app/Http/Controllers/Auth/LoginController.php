@@ -9,10 +9,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Http; // Added this line
-use Illuminate\Support\Str;
-use App\Mail\PasswordResetOtpMail;
 use App\Mail\AuthOtpMail;
 
 class LoginController extends Controller
@@ -30,73 +26,23 @@ class LoginController extends Controller
             unset($rules['cf-turnstile-response']);
         }
 
-        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), $rules);
+        $validator = validator($request->all(), $rules);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $throttleKey = Str::lower($request->input('email')) . '|' . $request->ip();
-        $failCountKey = 'login_fails:' . $throttleKey;
-
-        // Fix 6: CAPTCHA / Bot Detection (Trigger after 3 fails)
-        $fails = \Illuminate\Support\Facades\Cache::get($failCountKey, 0);
-        if ($fails >= 3) {
-            $captchaValidated = \Illuminate\Support\Facades\Validator::make($request->all(), [
-                'turnstile_token' => 'required|string',
-            ]);
-
-            if ($captchaValidated->fails()) {
-                return response()->json(['errors' => ['CAPTCHA verification required.'], 'captcha_required' => true], 422);
-            }
-
-            // Validate Turnstile Token
-            $response = Http::asForm()->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
-                'secret' => config('services.turnstile.secret') ?? env('TURNSTILE_SECRET_KEY'),
-                'response' => $request->turnstile_token,
-                'remoteip' => $request->ip(),
-            ]);
-
-            if (!$response->json('success')) {
-                return response()->json(['errors' => ['CAPTCHA verification failed.']], 422);
-            }
-        }
-
-        // Fix 2 & 5: Account Lockout & Rate Limiting
-        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
-            $seconds = RateLimiter::availableIn($throttleKey);
-            
-            return response()->json([
-                'errors' => ["Too many login attempts. Please try again in $seconds seconds."],
-                'lockout_seconds' => $seconds
-            ], 429);
-        }
-
+        // Check if user exists
         $user = User::where('email', $request->email)->first();
         if (! $user || ! Hash::check($request->password, $user->password)) {
-            RateLimiter::hit($throttleKey, 900); // 15 minutes lockout after 5 hits
-            \Illuminate\Support\Facades\Cache::increment($failCountKey, 1);
-            \Illuminate\Support\Facades\Cache::put($failCountKey, \Illuminate\Support\Facades\Cache::get($failCountKey), 900);
-
-            if (RateLimiter::attempts($throttleKey) === 5) {
-                // Send lockout email
-                Mail::raw("Your account has been locked for 15 minutes due to multiple failed login attempts.", function ($message) use ($request) {
-                    $message->to($request->email)->subject("Security Alert: Account Locked");
-                });
+            // increment attempt count
+            $attemptCount = Cache::get('attempt_count_'.$request->email, 0);
+            $attemptCount++;
+            Cache::put('attempt_count_'.$request->email, $attemptCount, now()->addMinutes(15));
+            if ($attemptCount >= 5) {
+                Cache::put('too_much_attempt_'.$request->email, true, now()->addMinutes(15));
             }
-
-            return response()->json(['errors' => ['Invalid email address or password.']], 401);
-        }
-
-        RateLimiter::clear($throttleKey);
-
-        // Fix 7: Multi-Factor Authentication (MFA) Check
-        if ($user->google2fa_secret) {
-            return response()->json([
-                'success' => true,
-                'mfa_required' => true,
-                'message' => 'MFA verification required.'
-            ], 200);
+            return response()->json(['errors' => ['Invalid credentials']], 401);
         }
 
         // too much attempt check

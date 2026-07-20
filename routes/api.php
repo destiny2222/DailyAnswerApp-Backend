@@ -8,16 +8,11 @@ use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\MFACustomController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\OtpController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
-Route::get('v1/csrf-token', function () {
-    return response()->json(['token' => csrf_token()]);
-});
 
 Route::post('v1/login', [LoginController::class, 'login']);
 Route::post('v1/register', [RegisterController::class, 'register']);
@@ -37,33 +32,26 @@ Route::middleware('api.token')->group(function () {
     Route::get('v1/devotionals', [DevotionalController::class, 'index']);
     Route::get('v1/devotionals/today', [DevotionalController::class, 'today']);
     Route::get('v1/devotionals/upcoming', [DevotionalController::class, 'upcoming']);
+    // Route::get('v1/devotional/{id}/details', [DevotionalController::class, 'getDetails']);
 });
 
 // social auth routes
 Route::post('/auth/google', [SocialAuthController::class, 'googleAuth']);
 Route::post('/auth/google/callback', [SocialAuthController::class, 'googleCallback']);
 
-Route::middleware(['auth:sanctum', 'api.encrypt'])->group(function () {
-    Route::get('v1/mfa/setup', [MFACustomController::class, 'setup']);
-    Route::post('v1/mfa/activate', [MFACustomController::class, 'activate']);
-    Route::post('v1/mfa/verify', [MFACustomController::class, 'verify']);
-});
-
-Route::middleware(['auth:sanctum', 'api.encrypt'])->prefix('v1/payment')->group(function () {
-    Route::get('/plans', [PaymentController::class, 'getSubscriptionPlans']);
-    Route::post('/verify-receipt', [SubscriptionController::class, 'verifyReceipt']);
-    Route::post('/create-subscription', [PaymentController::class, 'createSubscription']);
-    Route::post('/create-support', [PaymentController::class, 'createSupport']);
-    Route::post('/confirm-recurring-support', [PaymentController::class, 'confirmRecurringSupport']);
-    Route::post('/cancel-recurring-support', [PaymentController::class, 'cancelRecurringSupport']);
-    Route::post('/create-intent', [PaymentController::class, 'createPaymentIntent']);
-    Route::post('/confirm', [PaymentController::class, 'confirmPayment']);
-    Route::get('/status', [PaymentController::class, 'checkPaymentStatus']);
-    Route::get('/recurring-support-plans', [PaymentController::class, 'getRecurringSupportPlans']);
-});
-
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::get('v1/devotional/{id}/details', [DevotionalController::class, 'getDetails']);
+    // Payment routes
+    Route::get('v1/payment/plans', [PaymentController::class, 'getSubscriptionPlans']);
+    Route::get('v1/payment/recurring-support-plans', [PaymentController::class, 'getRecurringSupportPlans']);
+    Route::post('v1/payment/create-subscription', [PaymentController::class, 'createSubscription']);
+    Route::post('/verify-receipt', [SubscriptionController::class, 'verifyReceipt']);
+    Route::post('v1/payment/confirm', [PaymentController::class, 'confirmPayment']);
+    Route::get('v1/payment/status', [PaymentController::class, 'checkPaymentStatus']);
+    Route::post('v1/payment/confirm-recurring-support', [PaymentController::class, 'confirmRecurringSupport']);
+    // New support routes
+    Route::post('v1/payment/create-support', [PaymentController::class, 'createSupport']);
+    Route::post('v1/payment/cancel-recurring-support', [PaymentController::class, 'cancelRecurringSupport']);
     // profile routes
     Route::get('v1/profile', [ProfileController::class, 'profile']);
     // note routes
