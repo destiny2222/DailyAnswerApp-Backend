@@ -4,7 +4,6 @@ use App\Http\Controllers\Api\DevotionalController;
 use App\Http\Controllers\Api\MemoryVerseController;
 use App\Http\Controllers\Api\NoteController;
 use App\Http\Controllers\Api\PaymentController;
-use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Auth\LoginController;
@@ -45,7 +44,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('v1/payment/plans', [PaymentController::class, 'getSubscriptionPlans']);
     Route::get('v1/payment/recurring-support-plans', [PaymentController::class, 'getRecurringSupportPlans']);
     Route::post('v1/payment/create-subscription', [PaymentController::class, 'createSubscription']);
-    Route::post('/verify-receipt', [SubscriptionController::class, 'verifyReceipt']);
     Route::post('v1/payment/confirm', [PaymentController::class, 'confirmPayment']);
     Route::get('v1/payment/status', [PaymentController::class, 'checkPaymentStatus']);
     Route::post('v1/payment/confirm-recurring-support', [PaymentController::class, 'confirmRecurringSupport']);
@@ -70,6 +68,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('v1/profile/update', [ProfileController::class, 'updateProfile']);
     Route::post('v1/profile/change-image', [ProfileController::class, 'changeProfileImage']);
     Route::post('v1/profile/change-password', [ProfileController::class, 'changePassword']);
+    Route::delete('v1/profile/delete', [ProfileController::class, 'deleteAccount']);
 });
 
 Route::get('/user', function (Request $request) {

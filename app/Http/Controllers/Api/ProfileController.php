@@ -116,5 +116,21 @@ class ProfileController extends Controller
         }
     }
 
-    
+    public function deleteAccount(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            $user->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Account deleted successfully.',
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+
+            return response()->json(['error' => 'An error occurred while deleting account.'], 500);
+        }
+    }
 }
